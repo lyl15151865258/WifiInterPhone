@@ -427,6 +427,9 @@ public class VoiceService extends Service {
         if (noiseSuppressor != null) {
             noiseSuppressor.release();
         }
+        if (speex != null) {
+            speex.close();
+        }
     }
 
     @Override

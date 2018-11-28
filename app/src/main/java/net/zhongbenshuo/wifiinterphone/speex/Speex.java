@@ -48,6 +48,11 @@ public class Speex {
 
     public native int open(int compression);
 
+    /**
+     * 获取音频帧大小
+     *
+     * @return int型帧大小
+     */
     public native int getFrameSize();
 
     /**
@@ -71,12 +76,36 @@ public class Speex {
 
     public native void close();
 
+    /**
+     * 初始化回音消除
+     *
+     * @param frameSize    帧数据大小（160）
+     * @param filterLength
+     */
     public native void initEcho(int frameSize, int filterLength);
 
+    /**
+     * 消除回音
+     *
+     * @param rec
+     * @param play
+     * @param out
+     */
     public native void echoCancellation(short[] rec, short[] play, short[] out);
 
+    /**
+     * 消除编码后的回音
+     *
+     * @param rec
+     * @param play
+     * @param encoded
+     * @return
+     */
     public native int echoCancellationEncode(short[] rec, short[] play, byte[] encoded);
 
+    /**
+     * 释放回音
+     */
     public native void destroyEcho();
 
     public native int getAecStatus();
