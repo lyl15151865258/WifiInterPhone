@@ -15,7 +15,6 @@ import android.support.v4.view.ViewPager;
 import android.os.Bundle;
 import android.support.v7.content.res.AppCompatResources;
 import android.text.TextPaint;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -181,11 +180,6 @@ public class MainActivity extends BaseActivity {
             if (voiceService == null) {
                 bindVoiceService();
             }
-
-            if (voiceService != null) {
-                Log.d("VoiceService", "重新开始录音");
-                voiceService.startRecording();
-            }
         } else {
             //提示是否连接WiFi
             CommonWarningDialog commonWarningDialog = new CommonWarningDialog(mContext, getString(R.string.notification_connect_wifi));
@@ -255,8 +249,6 @@ public class MainActivity extends BaseActivity {
                 vibrator.vibrate(50);
                 if (voiceService != null) {
                     voiceService.setIsSending(true);
-                } else {
-
                 }
             } else if (event.getAction() == MotionEvent.ACTION_UP) {
                 v.performClick();
@@ -264,8 +256,6 @@ public class MainActivity extends BaseActivity {
                 vibrator.vibrate(50);
                 if (voiceService != null) {
                     voiceService.setIsSending(false);
-                } else {
-
                 }
             }
             return false;
@@ -281,14 +271,6 @@ public class MainActivity extends BaseActivity {
             } else {
                 showToast(R.string.microphonePermission);
             }
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (voiceService != null) {
-            voiceService.stopRecording();
         }
     }
 

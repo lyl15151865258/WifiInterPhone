@@ -27,6 +27,7 @@ import net.zhongbenshuo.wifiinterphone.activity.MainActivity;
 import net.zhongbenshuo.wifiinterphone.bean.DataPacket;
 import net.zhongbenshuo.wifiinterphone.constant.VoiceConstant;
 import net.zhongbenshuo.wifiinterphone.speex.Speex;
+import net.zhongbenshuo.wifiinterphone.utils.ByteUtil;
 import net.zhongbenshuo.wifiinterphone.utils.IPUtil;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 
@@ -68,7 +69,6 @@ public class VoiceService extends Service {
     private NoiseSuppressor noiseSuppressor;
     private byte[] recordReceiveBytes;
     private boolean isRunning = true, isSending = false;
-    public boolean isRecording = false;
     //定义信息头
     private String thisDevInfo;
 
@@ -215,7 +215,6 @@ public class VoiceService extends Service {
                 VoiceConstant.ENCODING,                             //采样输出格式
                 recordBufferSize                                    //上述求得录制最小缓存
         );
-        startRecording();
     }
 
     private void initAudioTrack() {
@@ -295,8 +294,8 @@ public class VoiceService extends Service {
                 DatagramSocket clientSocket = new DatagramSocket();
                 short[] audioData = new short[frameSize];
                 while (isRunning) {
-//                    if (isSending && audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
                     if (isSending) {
+                        audioRecord.startRecording();
                         //向本机所在的网段广播数据
                         InetAddress inetAddress = null;
                         try {
@@ -305,26 +304,27 @@ public class VoiceService extends Service {
                             e.printStackTrace();
                         }
 
-                        //获取音频数据
-                        short[] dst = new short[frameSize];
+                        // 获取音频数据
                         byte[] encoded = new byte[frameSize];
                         int number = audioRecord.read(audioData, 0, frameSize);
-                        System.arraycopy(audioData, 0, dst, 0, number);
+                        // 获取有效长度并编码
+                        short[] dst = Arrays.copyOfRange(audioData, 0, number);
                         int totalByte = speex.encode(dst, 0, encoded, number);
+                        // 获取编码后的有效长度
+                        byte[] result = Arrays.copyOfRange(encoded, 0, totalByte);
+
+                        LogUtils.d("VoiceService", "编码成功，字节数组长度 = " + totalByte + "，设备信息长度：" + thisDevInfo.getBytes().length + "，result长度：" + result.length);
 
                         if (totalByte > 0) {
-                            LogUtils.d("VoiceService", "编码成功，字节数组长度 = " + totalByte);
                             //构建数据包
-                            DataPacket dataPacket = new DataPacket(headSize, frameSize, thisDevInfo.getBytes(), encoded);
-                            LogUtils.d("VoiceService", "打包成功");
+                            DataPacket dataPacket = new DataPacket(headSize, totalByte, thisDevInfo.getBytes(), result);
                             //构建数据报文
                             DatagramPacket sendPacket = new DatagramPacket(
                                     dataPacket.getAllData(),
                                     dataPacket.getAllData().length,
                                     inetAddress,
-                                    broadcastPort);//网络端口
-
-                            LogUtils.d("VoiceService", "————————发送的音频长度为————————：" + dataPacket.getAllData().length);
+                                    broadcastPort);
+                            LogUtils.d("VoiceService", "构建数据报文成功,发送的音频长度为：" + dataPacket.getAllData().length);
 
                             // 发送
                             try {
@@ -369,8 +369,10 @@ public class VoiceService extends Service {
                         byte[] data = receivePacket.getData();
                         // 获得包头
                         byte[] head = Arrays.copyOf(data, headSize);
+                        // 获得包体长度
+                        byte[] bodyLength = Arrays.copyOfRange(data, headSize, headSize + 4);
                         // 获得包体
-                        byte[] body = Arrays.copyOfRange(data, headSize, headSize + frameSize);
+                        byte[] body = Arrays.copyOfRange(data, headSize + 4, headSize + 4 + ByteUtil.byteArrayToInt(bodyLength, 0));
                         // 获得头信息 通过头信息判断是否是自己发出的语音
                         String remoteDeviceInfo = new String(head).trim();
                         LogUtils.d("VoiceService", "收到来自:" + remoteDeviceInfo + "的语音");
@@ -424,26 +426,6 @@ public class VoiceService extends Service {
         }
         if (noiseSuppressor != null) {
             noiseSuppressor.release();
-        }
-    }
-
-    /**
-     * 开始录音
-     */
-    public void startRecording() {
-        if (!isRecording) {
-            audioRecord.startRecording();
-            isRecording = true;
-        }
-    }
-
-    /**
-     * 暂停录音
-     */
-    public void stopRecording() {
-        if (isRecording) {
-            audioRecord.stop();
-            isRecording = false;
         }
     }
 
