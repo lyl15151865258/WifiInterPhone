@@ -1,6 +1,5 @@
 package net.zhongbenshuo.wifiinterphone.activity;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -31,7 +30,6 @@ import java.util.List;
 
 public class ChooseLanguageActivity extends BaseActivity {
 
-    private Context mContext;
     private SharedPreferencesUtil sharedPreferencesUtil;
     private List<Language> languageList;
     private ChooseLanguageAdapter chooseLanguageAdapter;
@@ -40,7 +38,6 @@ public class ChooseLanguageActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_choose_language);
-        mContext = this;
         sharedPreferencesUtil = SharedPreferencesUtil.getInstance();
         MyToolbar toolbar = findViewById(R.id.myToolbar);
         toolbar.initToolBar(this, toolbar, getString(R.string.ChooseLanguage), R.drawable.back_white, onClickListener);
@@ -52,7 +49,7 @@ public class ChooseLanguageActivity extends BaseActivity {
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         recyclerViewLanguage.setLayoutManager(linearLayoutManager);
         recyclerViewLanguage.addItemDecoration(new RecyclerViewDivider(this, LinearLayoutManager.HORIZONTAL, 1, ContextCompat.getColor(this, R.color.gray_slight)));
-        chooseLanguageAdapter = new ChooseLanguageAdapter(mContext,languageList);
+        chooseLanguageAdapter = new ChooseLanguageAdapter(this, languageList);
         recyclerViewLanguage.setAdapter(chooseLanguageAdapter);
         chooseLanguageAdapter.setOnItemClickListener((view, position) -> {
             for (int i = 0; i < chooseLanguageAdapter.getItemCount(); i++) {
@@ -67,10 +64,8 @@ public class ChooseLanguageActivity extends BaseActivity {
                 //Android6.0以上直接调用recreate()方法刷新页面
                 recreate();
             } else {
-                //Android6.0及以下调用recreate()方法刷新页面会闪屏，采用重新创建Activity的方式
-                openActivity(ChooseLanguageActivity.class);
-                overridePendingTransition(0, 0);
-                finish();
+                //Android6.0及以下调用recreate()方法刷新页面会闪屏，直接重新打开MainActivity
+                goBack();
             }
         });
     }
