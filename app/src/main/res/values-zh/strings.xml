@@ -1,0 +1,42 @@
+<resources>
+
+    <string name="app_name">局域网对讲机</string>
+    <string name="loading">加载中…</string>
+    <string name="ssid">WIFi名称：</string>
+    <string name="ip">本机IP：</string>
+    <string name="contact">联系人</string>
+    <string name="malfunction">报警信息</string>
+    <string name="pressToSpeak">按住说话</string>
+    <string name="releaseFinish">松开结束</string>
+    <string name="microphonePermission">请授予麦克风权限</string>
+    <string name="settings">设置</string>
+    <string name="click_again_exit">再按一次退出程序</string>
+    <string name="reminder_metter">中本硕提示您</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_input_continue">Continue</string>
+    <string name="notification_connect_wifi">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;您当前没有连接WiFi，是否前往连接？</string>
+    <string name="VoiceTest">语音测试</string>
+    <string name="WifiSettings">Wifi设置</string>
+    <string name="LanguageSettings">语言设置</string>
+    <string name="PlayWithSpeakers">使用扬声器播放</string>
+    <string name="working">对讲机服务工作中</string>
+
+    <string name="Logout">退出登录</string>
+
+    <string name="listview_header_hint_normal">下拉刷新</string>
+    <string name="listview_header_hint_release">释放立即刷新</string>
+    <string name="listview_loading">正在加载...</string>
+    <string name="nomore_loading">没有了</string>
+    <string name="refreshing">正在刷新...</string>
+    <string name="refresh_done">刷新完成</string>
+    <string name="loading_done">加载完成</string>
+    <string name="listview_header_last_time">上次更新时间：</string>
+
+    <string name="ChooseLanguage">语言选择</string>
+    <string name="Save">保存</string>
+    <string name="lan_default">跟随系统</string>
+    <string name="lan_chinese">中文</string>
+    <string name="lan_en">英语</string>
+    <string name="lan_ja">日本语</string>
+
+</resources>
