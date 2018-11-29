@@ -41,25 +41,47 @@ public class ContactsFragment extends BaseFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_contacts, container, false);
         mContext = getContext();
-        xRVContacts = view.findViewById(R.id.xRVContacts);
+        xRVContacts = view.findViewById(R.id.xRVMalfunction);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(mContext);
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         xRVContacts.setLayoutManager(linearLayoutManager);
         xRVContacts.setRefreshProgressStyle(ProgressStyle.BallSpinFadeLoader);
-        xRVContacts.setLoadingMoreEnabled(false);
         xRVContacts.setArrowImageView(R.drawable.iconfont_downgrey);
         xRVContacts.getDefaultRefreshHeaderView().setRefreshTimeVisible(false);
+        xRVContacts.getDefaultFootView().setLoadingHint(getString(R.string.loading));
+        xRVContacts.getDefaultFootView().setNoMoreHint(getString(R.string.NoMoreData));
         xRVContacts.addItemDecoration(new XRecyclerViewDivider(mContext, LinearLayoutManager.HORIZONTAL, 1, ContextCompat.getColor(mContext, R.color.gray_slight)));
 
         xRVContacts.setLoadingListener(new XRecyclerView.LoadingListener() {
             @Override
             public void onRefresh() {
-
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+                xRVContacts.refreshComplete();
             }
 
             @Override
             public void onLoadMore() {
-
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+                xRVContacts.loadMoreComplete();
+                xRVContacts.setNoMore(true);
             }
         });
         contactList = new ArrayList<>();

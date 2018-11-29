@@ -12,9 +12,7 @@ import android.view.ViewGroup;
 import com.bumptech.glide.Glide;
 
 import net.zhongbenshuo.wifiinterphone.R;
-import net.zhongbenshuo.wifiinterphone.adapter.ContactsAdapter;
 import net.zhongbenshuo.wifiinterphone.adapter.MalfunctionAdapter;
-import net.zhongbenshuo.wifiinterphone.bean.Contact;
 import net.zhongbenshuo.wifiinterphone.bean.Malfunction;
 import net.zhongbenshuo.wifiinterphone.widget.xrecyclerview.ProgressStyle;
 import net.zhongbenshuo.wifiinterphone.widget.xrecyclerview.XRecyclerView;
@@ -34,7 +32,7 @@ import java.util.List;
 public class MalfunctionFragment extends BaseFragment {
 
     private Context mContext;
-    private XRecyclerView xRVContacts;
+    private XRecyclerView xRVMalfunction;
     private List<Malfunction> malfunctionList;
     private MalfunctionAdapter malfunctionAdapter;
     private boolean sIsScrolling = false;
@@ -43,25 +41,47 @@ public class MalfunctionFragment extends BaseFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_contacts, container, false);
         mContext = getContext();
-        xRVContacts = view.findViewById(R.id.xRVContacts);
+        xRVMalfunction = view.findViewById(R.id.xRVMalfunction);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(mContext);
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        xRVContacts.setLayoutManager(linearLayoutManager);
-        xRVContacts.setRefreshProgressStyle(ProgressStyle.BallSpinFadeLoader);
-        xRVContacts.setLoadingMoreEnabled(false);
-        xRVContacts.setArrowImageView(R.drawable.iconfont_downgrey);
-        xRVContacts.getDefaultRefreshHeaderView().setRefreshTimeVisible(false);
-        xRVContacts.addItemDecoration(new XRecyclerViewDivider(mContext, LinearLayoutManager.HORIZONTAL, 1, ContextCompat.getColor(mContext, R.color.gray_slight)));
+        xRVMalfunction.setLayoutManager(linearLayoutManager);
+        xRVMalfunction.setRefreshProgressStyle(ProgressStyle.BallSpinFadeLoader);
+        xRVMalfunction.setArrowImageView(R.drawable.iconfont_downgrey);
+        xRVMalfunction.getDefaultRefreshHeaderView().setRefreshTimeVisible(false);
+        xRVMalfunction.getDefaultFootView().setLoadingHint(getString(R.string.loading));
+        xRVMalfunction.getDefaultFootView().setNoMoreHint(getString(R.string.NoMoreData));
+        xRVMalfunction.addItemDecoration(new XRecyclerViewDivider(mContext, LinearLayoutManager.HORIZONTAL, 1, ContextCompat.getColor(mContext, R.color.gray_slight)));
 
-        xRVContacts.setLoadingListener(new XRecyclerView.LoadingListener() {
+        xRVMalfunction.setLoadingListener(new XRecyclerView.LoadingListener() {
             @Override
             public void onRefresh() {
-
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+                xRVMalfunction.refreshComplete();
             }
 
             @Override
             public void onLoadMore() {
-
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+                xRVMalfunction.loadMoreComplete();
+                xRVMalfunction.setNoMore(true);
             }
         });
         malfunctionList = new ArrayList<>();
@@ -75,8 +95,8 @@ public class MalfunctionFragment extends BaseFragment {
         }
         malfunctionAdapter = new MalfunctionAdapter(mContext, malfunctionList);
         malfunctionAdapter.setOnItemClickListener(onItemClickListener);
-        xRVContacts.setAdapter(malfunctionAdapter);
-        xRVContacts.addOnScrollListener(onScrollListener);
+        xRVMalfunction.setAdapter(malfunctionAdapter);
+        xRVMalfunction.addOnScrollListener(onScrollListener);
 
         return view;
     }

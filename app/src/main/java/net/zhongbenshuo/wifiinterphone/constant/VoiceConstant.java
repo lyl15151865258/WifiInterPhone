@@ -27,7 +27,7 @@ public class VoiceConstant {
     public static final int NOTICE_ID = 100;
 
 
-    public static final String FILE_PATH = "sound/tts_%s.mp3";
+    public static final String MUSIC_FILE_CHINESE_PATH = "tts/chinese/tts_%s.mp3";
 
     public static final String DOT_POINT = ".";
     //小数点

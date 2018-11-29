@@ -9,6 +9,7 @@
     <string name="pressToSpeak">ホールドアンドトーク</string>
     <string name="releaseFinish">リリース終了</string>
     <string name="microphonePermission">マイクの許可を与えてください</string>
+    <string name="NoMoreData">データはこれ以上ありません</string>
     <string name="settings">設定</string>
     <string name="click_again_exit">もう一度押すとプログラムが終了します</string>
     <string name="reminder_metter">プロンプト</string>

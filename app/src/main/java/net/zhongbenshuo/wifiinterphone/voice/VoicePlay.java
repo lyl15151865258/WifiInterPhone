@@ -13,6 +13,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * 声音播放工具
+ * Created at 2018/11/29 9:53
+ *
+ * @author LiYuliang
+ * @version 1.0
+ */
+
 public class VoicePlay {
 
     private ExecutorService mExecutorService;
@@ -94,21 +102,17 @@ public class VoicePlay {
      *
      * @param voicePlay
      */
-    private void start(final List<String> voicePlay) {
+    private void start(List<String> voicePlay) {
         synchronized (VoicePlay.this) {
 
             MediaPlayer mMediaPlayer = new MediaPlayer();
-            final CountDownLatch mCountDownLatch = new CountDownLatch(1);
+            CountDownLatch mCountDownLatch = new CountDownLatch(1);
             AssetFileDescriptor assetFileDescription = null;
 
             try {
                 final int[] counter = {0};
-                assetFileDescription = FileUtils.getAssetFileDescription(mContext,
-                        String.format(VoiceConstant.FILE_PATH, voicePlay.get(counter[0])));
-                mMediaPlayer.setDataSource(
-                        assetFileDescription.getFileDescriptor(),
-                        assetFileDescription.getStartOffset(),
-                        assetFileDescription.getLength());
+                assetFileDescription = FileUtils.getAssetFileDescription(mContext, String.format(VoiceConstant.MUSIC_FILE_CHINESE_PATH, voicePlay.get(counter[0])));
+                mMediaPlayer.setDataSource(assetFileDescription.getFileDescriptor(), assetFileDescription.getStartOffset(), assetFileDescription.getLength());
                 mMediaPlayer.prepareAsync();
                 mMediaPlayer.setOnPreparedListener(mediaPlayer -> mMediaPlayer.start());
                 mMediaPlayer.setOnCompletionListener(mediaPlayer -> {
@@ -117,8 +121,7 @@ public class VoicePlay {
 
                     if (counter[0] < voicePlay.size()) {
                         try {
-                            AssetFileDescriptor fileDescription2 = FileUtils.getAssetFileDescription(mContext,
-                                    String.format(VoiceConstant.FILE_PATH, voicePlay.get(counter[0])));
+                            AssetFileDescriptor fileDescription2 = FileUtils.getAssetFileDescription(mContext, String.format(VoiceConstant.MUSIC_FILE_CHINESE_PATH, voicePlay.get(counter[0])));
                             mediaPlayer.setDataSource(
                                     fileDescription2.getFileDescriptor(),
                                     fileDescription2.getStartOffset(),

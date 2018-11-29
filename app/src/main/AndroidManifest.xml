@@ -81,11 +81,10 @@
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
 
-        <!-- 语音服务类 -->
+        <!-- 语音服务 -->
         <service
             android:name="net.zhongbenshuo.wifiinterphone.service.VoiceService"
             android:enabled="true"
-            android:exported="false"
             android:persistent="true" />
 
         <receiver

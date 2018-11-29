@@ -16,10 +16,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:hint="请直接输入金额，例如0.01"
+        android:hint="Input number"
         android:inputType="numberDecimal"
-        android:maxLines="1"
-        android:paddingLeft="12dp" />
+        android:maxLength="8"
+        android:maxLines="1" />
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -29,14 +29,14 @@
             android:id="@+id/bt_play"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="播报/添加" />
+            android:text="Play" />
 
         <Button
             android:id="@+id/bt_del"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:text="清除列表" />
+            android:layout_alignParentEnd="true"
+            android:text="Clear" />
 
         <Switch
             android:id="@+id/switch_view"
@@ -47,18 +47,9 @@
 
     </RelativeLayout>
 
-    <ScrollView
+    <TextView
+        android:id="@+id/tvText"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <LinearLayout
-            android:id="@+id/ll_money_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-        </LinearLayout>
-
-    </ScrollView>
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

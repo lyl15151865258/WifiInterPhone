@@ -9,6 +9,7 @@
     <string name="pressToSpeak">按住说话</string>
     <string name="releaseFinish">松开结束</string>
     <string name="microphonePermission">请授予麦克风权限</string>
+    <string name="NoMoreData">没有更多的数据</string>
     <string name="settings">设置</string>
     <string name="click_again_exit">再按一次退出程序</string>
     <string name="reminder_metter">中本硕提示您</string>

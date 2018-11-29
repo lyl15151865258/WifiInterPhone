@@ -9,6 +9,7 @@
     <string name="pressToSpeak">Press and talk</string>
     <string name="releaseFinish">Release finish</string>
     <string name="microphonePermission">Please grant microphone permission</string>
+    <string name="NoMoreData">No more data.</string>
     <string name="settings">Settings</string>
     <string name="click_again_exit">Press again to exit the program</string>
     <string name="reminder_metter">Tip</string>
