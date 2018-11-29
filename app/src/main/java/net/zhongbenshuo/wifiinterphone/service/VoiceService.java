@@ -12,6 +12,7 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.audiofx.AcousticEchoCanceler;
 import android.media.audiofx.AutomaticGainControl;
@@ -71,6 +72,7 @@ public class VoiceService extends Service {
     private boolean isRunning = true, isSending = false;
     //定义信息头
     private String thisDevInfo;
+    private MediaPlayer mMediaPlayer;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -126,6 +128,11 @@ public class VoiceService extends Service {
 
         // 显示一个前台Notification
         showNotification();
+
+        // 播放无声音乐
+        mMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.silent);
+        mMediaPlayer.setLooping(true);
+        mMediaPlayer.start();
     }
 
     /**
@@ -439,6 +446,12 @@ public class VoiceService extends Service {
         isRunning = false;
         executorService.shutdown();
         release();
+
+        if (mMediaPlayer != null) {
+            mMediaPlayer.stop();
+        }
+
+        stopForeground(true);
 
         // 如果Service被杀死，干掉通知
         NotificationManager mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
