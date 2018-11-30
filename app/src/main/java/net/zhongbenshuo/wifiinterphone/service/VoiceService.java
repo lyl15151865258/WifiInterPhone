@@ -5,6 +5,8 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
@@ -26,6 +28,7 @@ import android.text.TextUtils;
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.activity.MainActivity;
 import net.zhongbenshuo.wifiinterphone.bean.DataPacket;
+import net.zhongbenshuo.wifiinterphone.broadcast.MediaButtonReceiver;
 import net.zhongbenshuo.wifiinterphone.constant.VoiceConstant;
 import net.zhongbenshuo.wifiinterphone.speex.Speex;
 import net.zhongbenshuo.wifiinterphone.utils.ByteUtil;
@@ -74,22 +77,19 @@ public class VoiceService extends Service {
     private String thisDevInfo;
     private MediaPlayer mMediaPlayer;
 
+    private AudioManager mAudioManager;
+    private ComponentName componentName;
+
     @Override
     public IBinder onBind(Intent intent) {
         thisDevInfo = IPUtil.getLocalIPAddress(this);
-        if (intent != null) {
-            String ip = intent.getStringExtra("ip");
-            int port = intent.getIntExtra("port", -1);
-            if (ip != null && !TextUtils.isEmpty(ip) && port != -1) {
-                if (!ip.equals(broadcastIp) || port != broadcastPort) {
-                    broadcastIp = ip;
-                    broadcastPort = port;
-                    stopSendVoiceThread();
-                    stopReceiveVoiceThread();
-                    startSendVoiceThread();
-                    startReceiveVoiceThread();
-                }
-            }
+        if (!IPUtil.getBroadcastIPAddress(this).equals(broadcastIp)) {
+            broadcastIp = IPUtil.getBroadcastIPAddress(this);
+            broadcastPort = VoiceConstant.PORT_BROADCAST;
+            stopSendVoiceThread();
+            stopReceiveVoiceThread();
+            startSendVoiceThread();
+            startReceiveVoiceThread();
         }
         return voiceServiceBinder;
     }
@@ -127,12 +127,16 @@ public class VoiceService extends Service {
         setNC();
 
         // 显示一个前台Notification
-        showNotification();
+//        showNotification();
 
         // 播放无声音乐
         mMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.silent);
         mMediaPlayer.setLooping(true);
         mMediaPlayer.start();
+
+        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        componentName = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
+        mAudioManager.registerMediaButtonEventReceiver(componentName);
     }
 
     /**
@@ -174,19 +178,13 @@ public class VoiceService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         thisDevInfo = IPUtil.getLocalIPAddress(this);
-        if (intent != null) {
-            String ip = intent.getStringExtra("ip");
-            int port = intent.getIntExtra("port", -1);
-            if (ip != null && !TextUtils.isEmpty(ip) && port != -1) {
-                if (!ip.equals(broadcastIp) || port != broadcastPort) {
-                    broadcastIp = ip;
-                    broadcastPort = port;
-                    stopSendVoiceThread();
-                    stopReceiveVoiceThread();
-                    startSendVoiceThread();
-                    startReceiveVoiceThread();
-                }
-            }
+        if (!IPUtil.getBroadcastIPAddress(this).equals(broadcastIp)) {
+            broadcastIp = IPUtil.getBroadcastIPAddress(this);
+            broadcastPort = VoiceConstant.PORT_BROADCAST;
+            stopSendVoiceThread();
+            stopReceiveVoiceThread();
+            startSendVoiceThread();
+            startReceiveVoiceThread();
         }
         // 如果Service被终止
         // 当资源允许情况下，重启service
@@ -451,11 +449,15 @@ public class VoiceService extends Service {
             mMediaPlayer.stop();
         }
 
-        stopForeground(true);
+//        stopForeground(true);
 
         // 如果Service被杀死，干掉通知
         NotificationManager mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mManager.cancel(VoiceConstant.NOTICE_ID);
+
+        if (componentName != null) {
+            mAudioManager.unregisterMediaButtonEventReceiver(componentName);
+        }
 
         // 重启自己
         Intent intent = new Intent(getApplicationContext(), VoiceService.class);

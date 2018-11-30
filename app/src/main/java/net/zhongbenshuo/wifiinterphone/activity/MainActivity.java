@@ -23,7 +23,6 @@ import android.widget.TextView;
 
 import net.zhongbenshuo.wifiinterphone.constant.Permission;
 import net.zhongbenshuo.wifiinterphone.R;
-import net.zhongbenshuo.wifiinterphone.constant.VoiceConstant;
 import net.zhongbenshuo.wifiinterphone.fragment.ContactsFragment;
 import net.zhongbenshuo.wifiinterphone.fragment.MalfunctionFragment;
 import net.zhongbenshuo.wifiinterphone.service.VoiceService;
@@ -169,11 +168,11 @@ public class MainActivity extends BaseActivity {
             tvSSID.setText(WifiUtil.getSSID(mContext));
             tvIp.setText(IPUtil.getLocalIPAddress(mContext));
             Intent intent = new Intent(mContext, VoiceService.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent);
-            } else {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                startForegroundService(intent);
+//            } else {
                 startService(intent);
-            }
+//            }
             if (voiceService == null) {
                 bindVoiceService();
             }
@@ -216,8 +215,6 @@ public class MainActivity extends BaseActivity {
             }
         };
         Intent intent = new Intent(mContext, VoiceService.class);
-        intent.putExtra("ip", IPUtil.getBroadcastIPAddress(mContext));
-        intent.putExtra("port", VoiceConstant.PORT_BROADCAST);
         bindService(intent, serviceConnection, BIND_AUTO_CREATE);
     }
 
