@@ -21,9 +21,13 @@ public class VoiceConstant {
      */
     public static final int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
     /**
-     * 局域网广播端口
+     * 局域网组播IP地址
      */
-    public static final int PORT_BROADCAST = 30000;
+    public static final String BROADCAST_IP = "224.0.0.1";
+    /**
+     * 局域网组播端口
+     */
+    public static final int BROADCAST_PORT = 30000;
     public static final int NOTICE_ID = 100;
 
 

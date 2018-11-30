@@ -23,7 +23,6 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
-import android.text.TextUtils;
 
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.activity.MainActivity;
@@ -39,8 +38,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
@@ -60,8 +59,6 @@ public class VoiceService extends Service {
     private VoiceServiceBinder voiceServiceBinder = new VoiceServiceBinder();
     private static ExecutorService executorService;
 
-    private String broadcastIp;
-    private int broadcastPort;
     private Runnable sendVoiceRunnable, receiveVoiceRunnable;
 
     private Speex speex;
@@ -80,17 +77,11 @@ public class VoiceService extends Service {
     private AudioManager mAudioManager;
     private ComponentName componentName;
 
+    private MulticastSocket multicastSocket;
+
     @Override
     public IBinder onBind(Intent intent) {
         thisDevInfo = IPUtil.getLocalIPAddress(this);
-        if (!IPUtil.getBroadcastIPAddress(this).equals(broadcastIp)) {
-            broadcastIp = IPUtil.getBroadcastIPAddress(this);
-            broadcastPort = VoiceConstant.PORT_BROADCAST;
-            stopSendVoiceThread();
-            stopReceiveVoiceThread();
-            startSendVoiceThread();
-            startReceiveVoiceThread();
-        }
         return voiceServiceBinder;
     }
 
@@ -178,14 +169,10 @@ public class VoiceService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         thisDevInfo = IPUtil.getLocalIPAddress(this);
-        if (!IPUtil.getBroadcastIPAddress(this).equals(broadcastIp)) {
-            broadcastIp = IPUtil.getBroadcastIPAddress(this);
-            broadcastPort = VoiceConstant.PORT_BROADCAST;
-            stopSendVoiceThread();
-            stopReceiveVoiceThread();
-            startSendVoiceThread();
-            startReceiveVoiceThread();
-        }
+        stopSendVoiceThread();
+        stopReceiveVoiceThread();
+        startSendVoiceThread();
+        startReceiveVoiceThread();
         // 如果Service被终止
         // 当资源允许情况下，重启service
         return START_STICKY;
@@ -304,8 +291,11 @@ public class VoiceService extends Service {
                         //向本机所在的网段广播数据
                         InetAddress inetAddress = null;
                         try {
-                            inetAddress = InetAddress.getByName(broadcastIp);
-                        } catch (UnknownHostException e) {
+                            inetAddress = InetAddress.getByName(VoiceConstant.BROADCAST_IP);
+                            multicastSocket = new MulticastSocket(VoiceConstant.BROADCAST_PORT);
+                            multicastSocket.setTimeToLive(1);
+                            multicastSocket.joinGroup(inetAddress);
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
 
@@ -328,12 +318,12 @@ public class VoiceService extends Service {
                                     dataPacket.getAllData(),
                                     dataPacket.getAllData().length,
                                     inetAddress,
-                                    broadcastPort);
+                                    VoiceConstant.BROADCAST_PORT);
                             LogUtils.d("VoiceService", "构建数据报文成功,发送的音频长度为：" + dataPacket.getAllData().length);
 
                             // 发送
                             try {
-                                clientSocket.send(sendPacket);
+                                multicastSocket.send(sendPacket);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -362,12 +352,14 @@ public class VoiceService extends Service {
         isRunning = true;
         receiveVoiceRunnable = () -> {
             try {
-                DatagramSocket serverSocket = new DatagramSocket(broadcastPort);
-                DatagramPacket receivePacket = new DatagramPacket(recordReceiveBytes, headSize + frameSize);
+                InetAddress inetAddress = InetAddress.getByName(VoiceConstant.BROADCAST_IP);
+                MulticastSocket multicastSocket = new MulticastSocket(VoiceConstant.BROADCAST_PORT);
+                multicastSocket.joinGroup(inetAddress);
+                DatagramPacket receivePacket = new DatagramPacket(recordReceiveBytes, headSize + frameSize, inetAddress, VoiceConstant.BROADCAST_PORT);
                 while (isRunning) {
                     if (!isSending) {
                         try {
-                            serverSocket.receive(receivePacket);
+                            multicastSocket.receive(receivePacket);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -392,7 +384,7 @@ public class VoiceService extends Service {
                         }
                     }
                 }
-            } catch (SocketException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         };
