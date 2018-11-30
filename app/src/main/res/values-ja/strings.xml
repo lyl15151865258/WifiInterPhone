@@ -15,7 +15,7 @@
     <string name="reminder_metter">プロンプト</string>
     <string name="dialog_cancel">キャンセル</string>
     <string name="dialog_input_continue">続ける</string>
-    <string name="notification_connect_wifi">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;あなたは現在WiFiに接続されていません。接続しようとしていますか</string>
+    <string name="notification_connect_wifi">あなたは現在WiFiに接続されていません。接続しようとしていますか</string>
     <string name="VoiceTest">音声テスト</string>
     <string name="WifiSettings">Wi-Fi設定</string>
     <string name="LanguageSettings">言語設定</string>

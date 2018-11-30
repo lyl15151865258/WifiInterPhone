@@ -15,7 +15,7 @@
     <string name="reminder_metter">Tip</string>
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_input_continue">Continue</string>
-    <string name="notification_connect_wifi">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;You are not currently connected to WiFi, are you going to connect?</string>
+    <string name="notification_connect_wifi">You are not currently connected to WiFi, are you going to connect?</string>
     <string name="VoiceTest">Voice Test</string>
     <string name="WifiSettings">Wifi Settings</string>
     <string name="LanguageSettings">Language Settings</string>

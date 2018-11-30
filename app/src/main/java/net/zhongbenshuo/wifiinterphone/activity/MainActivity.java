@@ -28,7 +28,6 @@ import net.zhongbenshuo.wifiinterphone.fragment.MalfunctionFragment;
 import net.zhongbenshuo.wifiinterphone.service.VoiceService;
 import net.zhongbenshuo.wifiinterphone.adapter.SelectModuleAdapter;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
-import net.zhongbenshuo.wifiinterphone.utils.IPUtil;
 import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 import net.zhongbenshuo.wifiinterphone.widget.NoScrollViewPager;
 import net.zhongbenshuo.wifiinterphone.widget.dialog.CommonWarningDialog;
@@ -166,7 +165,7 @@ public class MainActivity extends BaseActivity {
         super.onResume();
         if (WifiUtil.WifiConnected(mContext)) {
             tvSSID.setText(WifiUtil.getSSID(mContext));
-            tvIp.setText(IPUtil.getLocalIPAddress(mContext));
+            tvIp.setText(WifiUtil.getLocalIPAddress(mContext));
             Intent intent = new Intent(mContext, VoiceService.class);
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 //                startForegroundService(intent);

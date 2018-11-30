@@ -13,9 +13,9 @@
     <string name="settings">设置</string>
     <string name="click_again_exit">再按一次退出程序</string>
     <string name="reminder_metter">中本硕提示您</string>
-    <string name="dialog_cancel">Cancel</string>
-    <string name="dialog_input_continue">Continue</string>
-    <string name="notification_connect_wifi">&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;您当前没有连接WiFi，是否前往连接？</string>
+    <string name="dialog_cancel">取消</string>
+    <string name="dialog_input_continue">继续</string>
+    <string name="notification_connect_wifi">您当前没有连接WiFi，是否前往连接？</string>
     <string name="VoiceTest">语音测试</string>
     <string name="WifiSettings">Wifi设置</string>
     <string name="LanguageSettings">语言设置</string>

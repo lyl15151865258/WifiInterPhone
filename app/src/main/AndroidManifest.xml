@@ -88,17 +88,6 @@
             android:persistent="true" />
 
         <receiver
-            android:name=".broadcast.WifiReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.net.wifi.RSSI_CHANGED" />
-                <action android:name="android.net.wifi.STATE_CHANGE" />
-                <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
-            </intent-filter>
-        </receiver>
-
-        <receiver
             android:name=".broadcast.MediaButtonReceiver"
             android:priority="2147483647">
             <intent-filter>
