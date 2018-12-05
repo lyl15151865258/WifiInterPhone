@@ -167,11 +167,11 @@ public class MainActivity extends BaseActivity {
             tvSSID.setText(WifiUtil.getSSID(mContext));
             tvIp.setText(WifiUtil.getLocalIPAddress(mContext));
             Intent intent = new Intent(mContext, VoiceService.class);
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                startForegroundService(intent);
-//            } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
                 startService(intent);
-//            }
+            }
             if (voiceService == null) {
                 bindVoiceService();
             }

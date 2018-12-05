@@ -211,7 +211,7 @@ public class CrashHandler implements UncaughtExceptionHandler {
             // 将崩溃信息写入txt文件
             String model = Build.MODEL;
             String fileName;
-            fileName = "WifiInterPhone-" + TimeUtils.getCurrentFormatDateTime() + "-" + model + "-" + "00000000" + ".txt";
+            fileName = "WifiInterPhone-" + TimeUtils.getCurrentFormatDateTime() + "-" + model + ".txt";
             String path = getRoot();
             File dir = new File(path);
             if (!dir.exists()) {

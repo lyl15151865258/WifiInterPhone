@@ -42,10 +42,9 @@ import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.SocketException;
+import java.net.NetworkInterface;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
@@ -65,7 +64,8 @@ public class VoiceService extends Service {
     private VoiceServiceBinder voiceServiceBinder = new VoiceServiceBinder();
     private static ExecutorService executorService;
 
-    private Runnable sendVoiceRunnable, receiveVoiceRunnable;
+    private WifiManager.MulticastLock multicastLock;
+    private InetAddress inetAddress;
 
     private Speex speex;
     private int headSize = 15, frameSize;
@@ -124,8 +124,11 @@ public class VoiceService extends Service {
         setAGC();
         setNC();
 
+        // 获取组播锁
+        openMulticastLock();
+
         // 显示一个前台Notification
-//        showNotification();
+        showNotification();
 
         // 播放无声音乐
         mMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.silent);
@@ -186,8 +189,25 @@ public class VoiceService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         thisDevInfo = WifiUtil.getLocalIPAddress(this);
-        stopSendVoiceThread();
-        stopReceiveVoiceThread();
+        try {
+            inetAddress = InetAddress.getByName(VoiceConstant.BROADCAST_IP);
+            multicastSocket = new MulticastSocket(VoiceConstant.BROADCAST_PORT);
+            multicastSocket.setNetworkInterface(NetworkInterface.getByName("wlan0"));
+            // setTimeToLive(int ttl)
+            // 当ttl为0时，指定数据报应停留在本地主机
+            // 为1时，指定数据报发送到本地局域网
+            // 为32时，发送到本站点的网络上
+            // 为64时，发送到本地区
+            // 128时，发送到本大洲
+            // 255为全球
+            if (multicastLock.isHeld()) {
+                // 加入组播
+                multicastSocket.setTimeToLive(32);
+                multicastSocket.joinGroup(inetAddress);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         startSendVoiceThread();
         startReceiveVoiceThread();
         // 如果Service被终止
@@ -296,82 +316,63 @@ public class VoiceService extends Service {
         return this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE);
     }
 
+    private void openMulticastLock() {
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        multicastLock = wifiManager.createMulticastLock("VoiceService");
+        multicastLock.acquire();
+    }
+
     private void startSendVoiceThread() {
         isRunning = true;
-        sendVoiceRunnable = () -> {
-            try {
-                DatagramSocket clientSocket = new DatagramSocket();
-                short[] audioData = new short[frameSize];
-                while (isRunning) {
-                    if (isSending && WifiUtil.WifiConnected(VoiceService.this)) {
-                        audioRecord.startRecording();
-                        //向本机所在的网段广播数据
-                        InetAddress inetAddress = null;
+        Runnable sendVoiceRunnable = () -> {
+            short[] audioData = new short[frameSize];
+            while (isRunning) {
+                if (isSending && WifiUtil.WifiConnected(VoiceService.this)) {
+                    audioRecord.startRecording();
+                    // 获取音频数据
+                    byte[] encoded = new byte[frameSize];
+                    int number = audioRecord.read(audioData, 0, frameSize);
+                    // 获取有效长度并编码
+                    short[] dst = Arrays.copyOfRange(audioData, 0, number);
+                    int totalByte = speex.encode(dst, 0, encoded, number);
+                    // 获取编码后的有效长度
+                    byte[] result = Arrays.copyOfRange(encoded, 0, totalByte);
+
+                    LogUtils.d("VoiceService", "编码成功，字节数组长度 = " + totalByte + "，设备信息长度：" + thisDevInfo.getBytes().length + "，result长度：" + result.length);
+
+                    if (totalByte > 0) {
+                        //构建数据包
+                        DataPacket dataPacket = new DataPacket(headSize, totalByte, thisDevInfo.getBytes(), result);
+                        //构建数据报文
+                        DatagramPacket sendPacket = new DatagramPacket(
+                                dataPacket.getAllData(),
+                                dataPacket.getAllData().length,
+                                inetAddress,
+                                VoiceConstant.BROADCAST_PORT);
+                        LogUtils.d("VoiceService", "构建数据报文成功,发送的音频长度为：" + dataPacket.getAllData().length);
+
+                        // 发送
                         try {
-                            inetAddress = InetAddress.getByName(VoiceConstant.BROADCAST_IP);
-                            multicastSocket = new MulticastSocket(VoiceConstant.BROADCAST_PORT);
-                            multicastSocket.setTimeToLive(1);
-                            multicastSocket.joinGroup(inetAddress);
-                        } catch (Exception e) {
+                            multicastSocket.send(sendPacket);
+                        } catch (IOException e) {
                             e.printStackTrace();
                         }
-
-                        // 获取音频数据
-                        byte[] encoded = new byte[frameSize];
-                        int number = audioRecord.read(audioData, 0, frameSize);
-                        // 获取有效长度并编码
-                        short[] dst = Arrays.copyOfRange(audioData, 0, number);
-                        int totalByte = speex.encode(dst, 0, encoded, number);
-                        // 获取编码后的有效长度
-                        byte[] result = Arrays.copyOfRange(encoded, 0, totalByte);
-
-                        LogUtils.d("VoiceService", "编码成功，字节数组长度 = " + totalByte + "，设备信息长度：" + thisDevInfo.getBytes().length + "，result长度：" + result.length);
-
-                        if (totalByte > 0) {
-                            //构建数据包
-                            DataPacket dataPacket = new DataPacket(headSize, totalByte, thisDevInfo.getBytes(), result);
-                            //构建数据报文
-                            DatagramPacket sendPacket = new DatagramPacket(
-                                    dataPacket.getAllData(),
-                                    dataPacket.getAllData().length,
-                                    inetAddress,
-                                    VoiceConstant.BROADCAST_PORT);
-                            LogUtils.d("VoiceService", "构建数据报文成功,发送的音频长度为：" + dataPacket.getAllData().length);
-
-                            // 发送
-                            try {
-                                multicastSocket.send(sendPacket);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            LogUtils.d("VoiceService", "发送语音");
-                        } else {
-                            LogUtils.d("VoiceService", "编码失败");
-                        }
+                        LogUtils.d("VoiceService", "发送语音");
+                    } else {
+                        LogUtils.d("VoiceService", "编码失败");
                     }
                 }
-                clientSocket.close();
-            } catch (SocketException e) {
-                e.printStackTrace();
             }
+            multicastSocket.close();
         };
         executorService.submit(sendVoiceRunnable);
     }
 
-    private void stopSendVoiceThread() {
-        if (sendVoiceRunnable != null) {
-            isRunning = false;
-            sendVoiceRunnable = null;
-        }
-    }
-
     private void startReceiveVoiceThread() {
         isRunning = true;
-        receiveVoiceRunnable = () -> {
+        Runnable receiveVoiceRunnable = () -> {
             try {
                 InetAddress inetAddress = InetAddress.getByName(VoiceConstant.BROADCAST_IP);
-                MulticastSocket multicastSocket = new MulticastSocket(VoiceConstant.BROADCAST_PORT);
-                multicastSocket.joinGroup(inetAddress);
                 DatagramPacket receivePacket = new DatagramPacket(recordReceiveBytes, headSize + frameSize, inetAddress, VoiceConstant.BROADCAST_PORT);
                 while (isRunning) {
                     if (!isSending && WifiUtil.WifiConnected(VoiceService.this)) {
@@ -408,13 +409,6 @@ public class VoiceService extends Service {
         executorService.submit(receiveVoiceRunnable);
     }
 
-    private void stopReceiveVoiceThread() {
-        if (receiveVoiceRunnable != null) {
-            isRunning = false;
-            receiveVoiceRunnable = null;
-        }
-    }
-
     public void setIsSending(boolean isSending) {
         this.isSending = isSending;
     }
@@ -443,6 +437,9 @@ public class VoiceService extends Service {
         }
         if (speex != null) {
             speex.close();
+        }
+        if (multicastLock != null && multicastLock.isHeld()) {
+            multicastLock.release();
         }
     }
 
@@ -530,7 +527,7 @@ public class VoiceService extends Service {
             unregisterReceiver(wifiReceiver);
         }
 
-//        stopForeground(true);
+        stopForeground(true);
 
         // 如果Service被杀死，干掉通知
         NotificationManager mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
