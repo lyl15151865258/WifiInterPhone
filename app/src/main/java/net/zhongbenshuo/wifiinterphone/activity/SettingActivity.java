@@ -36,6 +36,7 @@ public class SettingActivity extends BaseActivity {
         findViewById(R.id.ll_serverSettings).setOnClickListener(onClickListener);
         findViewById(R.id.ll_wifiSettings).setOnClickListener(onClickListener);
         findViewById(R.id.ll_languageSettings).setOnClickListener(onClickListener);
+        findViewById(R.id.ll_AccessibilityFeatures).setOnClickListener(onClickListener);
         ((ToggleButton) findViewById(R.id.toggle_useSpeakers)).setOnCheckedChangeListener(onCheckedChangeListener);
     }
 
@@ -46,7 +47,7 @@ public class SettingActivity extends BaseActivity {
                 break;
             case R.id.ll_serverSettings:
                 // 语音测试
-                openActivity(VoiceTestActivity.class);
+                openActivity(MediaTestActivity.class);
                 break;
             case R.id.ll_wifiSettings:
                 // Wifi设置
@@ -56,6 +57,15 @@ public class SettingActivity extends BaseActivity {
             case R.id.ll_languageSettings:
                 // 语言设置
                 openActivity(ChooseLanguageActivity.class);
+                break;
+            case R.id.ll_AccessibilityFeatures:
+                // 辅助功能
+                try {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 break;
             default:
                 break;

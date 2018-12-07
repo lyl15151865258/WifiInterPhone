@@ -22,7 +22,7 @@ import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
  * @version 1.0
  */
 
-public class VoiceTestActivity extends BaseActivity {
+public class MediaTestActivity extends BaseActivity {
 
     private boolean mCheckNum;
     private EditText editText;
@@ -33,7 +33,7 @@ public class VoiceTestActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_voice_test);
         MyToolbar toolbar = findViewById(R.id.myToolbar);
-        toolbar.initToolBar(this, toolbar, getString(R.string.VoiceTest), R.drawable.back_white, onClickListener);
+        toolbar.initToolBar(this, toolbar, getString(R.string.MediaTest), R.drawable.back_white, onClickListener);
         editText = findViewById(R.id.edittext);
         tvText = findViewById(R.id.tvText);
         findViewById(R.id.bt_play).setOnClickListener(onClickListener);
@@ -52,7 +52,7 @@ public class VoiceTestActivity extends BaseActivity {
                     showToast("请输入金额");
                     return;
                 }
-                VoicePlay.with(VoiceTestActivity.this).play(amount, mCheckNum);
+                VoicePlay.with(MediaTestActivity.this).play(amount, mCheckNum);
                 VoiceBuilder voiceBuilder = new VoiceBuilder.Builder()
                         .start("success")
                         .money(amount)

@@ -16,9 +16,10 @@
     <string name="dialog_cancel">キャンセル</string>
     <string name="dialog_input_continue">続ける</string>
     <string name="notification_connect_wifi">あなたは現在WiFiに接続されていません。接続しようとしていますか</string>
-    <string name="VoiceTest">音声テスト</string>
+    <string name="MediaTest">音声テスト</string>
     <string name="WifiSettings">Wi-Fi設定</string>
     <string name="LanguageSettings">言語設定</string>
+    <string name="AccessibilityFeatures">アクセシビリティ機能</string>
     <string name="PlayWithSpeakers">スピーカーで遊ぶ</string>
     <string name="working">ウォーキートーキーサービス業務</string>
 
@@ -39,5 +40,8 @@
     <string name="lan_chinese">中国語</string>
     <string name="lan_en">英語</string>
     <string name="lan_ja">日本語</string>
+
+    <string name="accessibility_description">キーキャプチャ</string>
+    <string name="accessibility_name">トランシーバー(オープンにおすすめ)</string>
 
 </resources>

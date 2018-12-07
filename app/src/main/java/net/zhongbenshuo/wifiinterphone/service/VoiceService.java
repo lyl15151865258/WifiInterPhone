@@ -5,7 +5,6 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -23,6 +22,7 @@ import android.media.audiofx.NoiseSuppressor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WifiManager.MulticastLock;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
@@ -33,7 +33,6 @@ import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.activity.MainActivity;
 import net.zhongbenshuo.wifiinterphone.bean.DataPacket;
 import net.zhongbenshuo.wifiinterphone.broadcast.BaseBroadcastReceiver;
-import net.zhongbenshuo.wifiinterphone.broadcast.MediaButtonReceiver;
 import net.zhongbenshuo.wifiinterphone.constant.VoiceConstant;
 import net.zhongbenshuo.wifiinterphone.speex.Speex;
 import net.zhongbenshuo.wifiinterphone.utils.ByteUtil;
@@ -61,10 +60,12 @@ import java.util.concurrent.TimeUnit;
 
 public class VoiceService extends Service {
 
+    private static final String TAG = "VoiceService";
+
     private VoiceServiceBinder voiceServiceBinder = new VoiceServiceBinder();
     private static ExecutorService executorService;
 
-    private WifiManager.MulticastLock multicastLock;
+    private MulticastLock multicastLock;
     private InetAddress inetAddress;
 
     private Speex speex;
@@ -80,11 +81,9 @@ public class VoiceService extends Service {
     private String thisDevInfo;
     private MediaPlayer mMediaPlayer;
 
-    private AudioManager mAudioManager;
-    private ComponentName componentName;
-
     private MulticastSocket multicastSocket;
     private WifiReceiver wifiReceiver;
+    private KeyEventBroadcastReceiver keyEventBroadcastReceiver;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -135,19 +134,8 @@ public class VoiceService extends Service {
         mMediaPlayer.setLooping(true);
         mMediaPlayer.start();
 
-        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        componentName = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
-        mAudioManager.registerMediaButtonEventReceiver(componentName);
 
-        if (wifiReceiver == null) {
-            wifiReceiver = new WifiReceiver();
-        }
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
-        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-        filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(wifiReceiver, filter);
+        registerBroadcastReceiver();
     }
 
     /**
@@ -266,14 +254,14 @@ public class VoiceService extends Service {
         acousticEchoCanceler = AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
         //判断设备是否支持回声消除(AEC)
         boolean isAec = AcousticEchoCanceler.isAvailable();
-        LogUtils.d("VoiceService", "是否支持回声消除(AEC) ========== " + isAec);
+        LogUtils.d(TAG, "是否支持回声消除(AEC) ========== " + isAec);
 
         if (isAec && hasMicrophone()) {
             try {
                 acousticEchoCanceler.setEnabled(true);//打开AEC
-                LogUtils.d("VoiceService", "AEC is Enable");
+                LogUtils.d(TAG, "AEC is Enable");
             } catch (IllegalStateException e) {
-                LogUtils.d("VoiceService", "setEnabled() in wrong state");
+                LogUtils.d(TAG, "setEnabled() in wrong state");
             }
         }
     }
@@ -283,14 +271,14 @@ public class VoiceService extends Service {
         automaticGainControl = AutomaticGainControl.create(audioRecord.getAudioSessionId());
         //判断设备是否支持自动增益控制(AEC)
         boolean isAvailable = AutomaticGainControl.isAvailable();
-        LogUtils.d("VoiceService", "是否支持自动增益控制(AGC) ========== " + isAvailable);
+        LogUtils.d(TAG, "是否支持自动增益控制(AGC) ========== " + isAvailable);
 
         if (isAvailable && hasMicrophone()) {
             try {
                 automaticGainControl.setEnabled(true);
-                LogUtils.d("VoiceService", "AGC is Enable");
+                LogUtils.d(TAG, "AGC is Enable");
             } catch (IllegalStateException e) {
-                LogUtils.d("VoiceService", "setEnabled() in wrong state");
+                LogUtils.d(TAG, "setEnabled() in wrong state");
             }
         }
     }
@@ -298,16 +286,16 @@ public class VoiceService extends Service {
     //噪声抑制器(NC)
     public void setNC() {
         boolean isAvailable = NoiseSuppressor.isAvailable();
-        LogUtils.d("VoiceService", "是否支持噪声抑制器(NC) ========== " + isAvailable);
+        LogUtils.d(TAG, "是否支持噪声抑制器(NC) ========== " + isAvailable);
 
         noiseSuppressor = NoiseSuppressor.create(audioRecord.getAudioSessionId());
 
         if (isAvailable && hasMicrophone()) {
             try {
                 noiseSuppressor.setEnabled(true);
-                LogUtils.d("VoiceService", "AGC is Enable");
+                LogUtils.d(TAG, "AGC is Enable");
             } catch (IllegalStateException e) {
-                LogUtils.d("VoiceService", "setEnabled() in wrong state");
+                LogUtils.d(TAG, "setEnabled() in wrong state");
             }
         }
     }
@@ -338,7 +326,7 @@ public class VoiceService extends Service {
                     // 获取编码后的有效长度
                     byte[] result = Arrays.copyOfRange(encoded, 0, totalByte);
 
-                    LogUtils.d("VoiceService", "编码成功，字节数组长度 = " + totalByte + "，设备信息长度：" + thisDevInfo.getBytes().length + "，result长度：" + result.length);
+                    LogUtils.d(TAG, "编码成功，字节数组长度 = " + totalByte + "，设备信息长度：" + thisDevInfo.getBytes().length + "，result长度：" + result.length);
 
                     if (totalByte > 0) {
                         //构建数据包
@@ -349,17 +337,17 @@ public class VoiceService extends Service {
                                 dataPacket.getAllData().length,
                                 inetAddress,
                                 VoiceConstant.BROADCAST_PORT);
-                        LogUtils.d("VoiceService", "构建数据报文成功,发送的音频长度为：" + dataPacket.getAllData().length);
+                        LogUtils.d(TAG, "构建数据报文成功,发送的音频长度为：" + dataPacket.getAllData().length);
 
-                        // 发送
+                        // 发送并关闭录制
                         try {
                             multicastSocket.send(sendPacket);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        LogUtils.d("VoiceService", "发送语音");
+                        LogUtils.d(TAG, "发送语音");
                     } else {
-                        LogUtils.d("VoiceService", "编码失败");
+                        LogUtils.d(TAG, "编码失败");
                     }
                 }
             }
@@ -372,7 +360,6 @@ public class VoiceService extends Service {
         isRunning = true;
         Runnable receiveVoiceRunnable = () -> {
             try {
-                InetAddress inetAddress = InetAddress.getByName(VoiceConstant.BROADCAST_IP);
                 DatagramPacket receivePacket = new DatagramPacket(recordReceiveBytes, headSize + frameSize, inetAddress, VoiceConstant.BROADCAST_PORT);
                 while (isRunning) {
                     if (!isSending && WifiUtil.WifiConnected(VoiceService.this)) {
@@ -380,6 +367,7 @@ public class VoiceService extends Service {
                             multicastSocket.receive(receivePacket);
                         } catch (IOException e) {
                             e.printStackTrace();
+                            continue;
                         }
                         byte[] data = receivePacket.getData();
                         // 获得包头
@@ -390,7 +378,7 @@ public class VoiceService extends Service {
                         byte[] body = Arrays.copyOfRange(data, headSize + 4, headSize + 4 + ByteUtil.byteArrayToInt(bodyLength, 0));
                         // 获得头信息 通过头信息判断是否是自己发出的语音
                         String remoteDeviceInfo = new String(head).trim();
-                        LogUtils.d("VoiceService", "收到来自:" + remoteDeviceInfo + "的语音");
+                        LogUtils.d(TAG, "收到来自:" + remoteDeviceInfo + "的语音");
                         if (!remoteDeviceInfo.equals(thisDevInfo)) {
                             short[] lin = new short[frameSize];
                             int size = speex.decode(body, lin, body.length);
@@ -510,6 +498,39 @@ public class VoiceService extends Service {
         }
     }
 
+    // 按键事件广播
+    private class KeyEventBroadcastReceiver extends BaseBroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            super.onReceive(context, intent);
+            if (("KEY_DOWN").equals(intent.getAction())) {
+                LogUtils.d(TAG, "收到KEY_DOWN广播");
+                setIsSending(true);
+            } else if (("KEY_UP").equals(intent.getAction())) {
+                LogUtils.d(TAG, "收到KEY_UP广播");
+                setIsSending(false);
+            }
+        }
+    }
+
+    /**
+     * 注册广播
+     */
+    private void registerBroadcastReceiver() {
+        wifiReceiver = new WifiReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
+        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(wifiReceiver, filter);
+
+        keyEventBroadcastReceiver = new KeyEventBroadcastReceiver();
+        IntentFilter filter1 = new IntentFilter();
+        filter1.addAction("KEY_DOWN");
+        filter1.addAction("KEY_UP");
+        registerReceiver(keyEventBroadcastReceiver, filter1);
+    }
 
     @Override
     public void onDestroy() {
@@ -527,15 +548,15 @@ public class VoiceService extends Service {
             unregisterReceiver(wifiReceiver);
         }
 
+        if (keyEventBroadcastReceiver != null) {
+            unregisterReceiver(keyEventBroadcastReceiver);
+        }
+
         stopForeground(true);
 
         // 如果Service被杀死，干掉通知
         NotificationManager mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mManager.cancel(VoiceConstant.NOTICE_ID);
-
-        if (componentName != null) {
-            mAudioManager.unregisterMediaButtonEventReceiver(componentName);
-        }
 
         // 重启自己
         Intent intent = new Intent(getApplicationContext(), VoiceService.class);
