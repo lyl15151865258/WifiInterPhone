@@ -87,7 +87,7 @@ public class VoiceService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        thisDevInfo = WifiUtil.getLocalIPAddress(this);
+        thisDevInfo = WifiUtil.getLocalIPAddress();
         return voiceServiceBinder;
     }
 
@@ -176,7 +176,7 @@ public class VoiceService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        thisDevInfo = WifiUtil.getLocalIPAddress(this);
+        thisDevInfo = WifiUtil.getLocalIPAddress();
         try {
             inetAddress = InetAddress.getByName(VoiceConstant.BROADCAST_IP);
             multicastSocket = new MulticastSocket(VoiceConstant.BROADCAST_PORT);
@@ -478,7 +478,7 @@ public class VoiceService extends Service {
                     if (NetworkInfo.State.CONNECTED == info.getState() && info.isAvailable()) {
                         if (info.getType() == ConnectivityManager.TYPE_WIFI || info.getType() == ConnectivityManager.TYPE_MOBILE) {
                             LogUtils.d(TAG, getConnectionType(info.getType()) + "连上");
-                            thisDevInfo = WifiUtil.getLocalIPAddress(VoiceService.this);
+                            thisDevInfo = WifiUtil.getLocalIPAddress();
                         }
                     } else {
                         LogUtils.d(TAG, getConnectionType(info.getType()) + "断开");

@@ -19,7 +19,7 @@ public class LogoActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_logo);
-        openActivity(MainActivity.class);
+        openActivity(AudioActivity.class);
         ActivityController.finishActivity(this);
     }
 

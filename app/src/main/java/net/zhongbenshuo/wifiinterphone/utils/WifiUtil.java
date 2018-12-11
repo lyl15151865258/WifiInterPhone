@@ -2,9 +2,15 @@ package net.zhongbenshuo.wifiinterphone.utils;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.DhcpInfo;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+
+import net.zhongbenshuo.wifiinterphone.WifiInterPhoneApplication;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import static android.content.Context.WIFI_SERVICE;
 
@@ -49,9 +55,9 @@ public class WifiUtil {
     }
 
     //获取本地IP函数
-    public static String getLocalIPAddress(Context context) {
+    public static String getLocalIPAddress() {
         //获取wifi服务
-        WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        WifiManager wifiManager = (WifiManager) WifiInterPhoneApplication.getInstance().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         //判断wifi是否开启
         if (!wifiManager.isWifiEnabled()) {
             wifiManager.setWifiEnabled(true);
@@ -83,6 +89,27 @@ public class WifiUtil {
         WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(WIFI_SERVICE);
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         return wifiInfo.getRssi();
+    }
+
+    /**
+     * 获取本网段的直接广播地址
+     *
+     * @param context Context对象
+     * @return InetAddress地址
+     * @throws UnknownHostException
+     */
+    public static InetAddress getBroadcastAddress(Context context) throws UnknownHostException {
+        WifiManager wifi = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        DhcpInfo dhcp = wifi.getDhcpInfo();
+        if (dhcp == null) {
+            return InetAddress.getByName("255.255.255.255");
+        }
+        int broadcast = (dhcp.ipAddress & dhcp.netmask) | ~dhcp.netmask;
+        byte[] quads = new byte[4];
+        for (int k = 0; k < 4; k++) {
+            quads[k] = (byte) ((broadcast >> k * 8) & 0xFF);
+        }
+        return InetAddress.getByAddress(quads);
     }
 
 }

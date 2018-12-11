@@ -165,7 +165,7 @@ public class MainActivity extends BaseActivity {
         super.onResume();
         if (WifiUtil.WifiConnected(mContext)) {
             tvSSID.setText(WifiUtil.getSSID(mContext));
-            tvIp.setText(WifiUtil.getLocalIPAddress(mContext));
+            tvIp.setText(WifiUtil.getLocalIPAddress());
             Intent intent = new Intent(mContext, VoiceService.class);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(intent);
