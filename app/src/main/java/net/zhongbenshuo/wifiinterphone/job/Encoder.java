@@ -28,7 +28,7 @@ public class Encoder extends JobHandler {
         // 在MessageQueue为空时，take方法阻塞
         while ((data = MessageQueue.getInstance(MessageQueue.ENCODER_DATA_QUEUE).take()) != null) {
             data.setEncodedData(AudioDataUtil.raw2spx(data.getRawData()));
-            MessageQueue.getInstance(MessageQueue.SENDER_DATA_QUEUE).put(data);
+            MessageQueue.getInstance(MessageQueue.SENDER_DATA_QUEUE_UNICAST).put(data);
         }
     }
 }

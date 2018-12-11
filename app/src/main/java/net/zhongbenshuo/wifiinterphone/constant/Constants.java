@@ -18,17 +18,12 @@ public class Constants {
     public static final String FAIL = "fail";
     public static final String SUCCESS = "success";
 
-    // 单播发送端口
-    public static final int UNICAST_PORT_SEND = 8856;
-    // 单播接收端口
-    public static final int UNICAST_PORT_RECEIVE = 8855;
-
+    // 单播端口号
+    public static final int UNICAST_PORT = 9998;
     // 组播端口号
     public static final int MULTI_BROADCAST_PORT = 9999;
     // 组播地址
     public static final String MULTI_BROADCAST_IP = "224.9.9.9";
-    // 单播端口号
-    public static final int UNICAST_PORT = 10000;
     // 采样频率
     public static final int sampleRateInHz = 8000;
     // 音频数据格式:PCM 16位每个样本，保证设备支持。

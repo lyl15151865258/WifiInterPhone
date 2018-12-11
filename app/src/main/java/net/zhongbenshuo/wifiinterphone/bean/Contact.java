@@ -1,5 +1,7 @@
 package net.zhongbenshuo.wifiinterphone.bean;
 
+import java.io.Serializable;
+
 /**
  * 联系人
  * Created at 2018/11/28 13:40
@@ -8,7 +10,7 @@ package net.zhongbenshuo.wifiinterphone.bean;
  * @version 1.0
  */
 
-public class Contact {
+public class Contact implements Serializable {
 
     private String ip;
 

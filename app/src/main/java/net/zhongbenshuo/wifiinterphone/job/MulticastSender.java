@@ -15,16 +15,16 @@ import java.net.DatagramPacket;
  *
  * @author yanghao1
  */
-public class Sender extends JobHandler {
+public class MulticastSender extends JobHandler {
 
-    public Sender(Handler handler) {
+    public MulticastSender(Handler handler) {
         super(handler);
     }
 
     @Override
     public void run() {
         AudioData audioData;
-        while ((audioData = MessageQueue.getInstance(MessageQueue.SENDER_DATA_QUEUE).take()) != null) {
+        while ((audioData = MessageQueue.getInstance(MessageQueue.SENDER_DATA_QUEUE_BROADCAST).take()) != null) {
             DatagramPacket datagramPacket = new DatagramPacket(
                     audioData.getEncodedData(), audioData.getEncodedData().length,
                     Multicast.getMulticast().getInetAddress(), Constants.MULTI_BROADCAST_PORT);

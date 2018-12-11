@@ -20,15 +20,17 @@ import java.util.Arrays;
  * Created by yanghao1 on 2017/4/12.
  */
 
-public class Receiver extends JobHandler {
+public class MulticastReceiver extends JobHandler {
 
-    public Receiver(Handler handler) {
+    private boolean flag = true;
+
+    public MulticastReceiver(Handler handler) {
         super(handler);
     }
 
     @Override
     public void run() {
-        while (true) {
+        while (flag) {
             // 设置接收缓冲段
             byte[] receivedData = new byte[Speex.getInstance().getFrameSize()];
             DatagramPacket datagramPacket = new DatagramPacket(receivedData, receivedData.length);
@@ -104,6 +106,7 @@ public class Receiver extends JobHandler {
 
     @Override
     public void free() {
+        flag = false;
         Multicast.getMulticast().free();
     }
 }

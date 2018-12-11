@@ -2,7 +2,6 @@ package net.zhongbenshuo.wifiinterphone.network.wlan;
 
 import net.zhongbenshuo.wifiinterphone.constant.Constants;
 
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
@@ -12,22 +11,14 @@ import java.net.SocketException;
 
 public class Unicast {
 
-    byte[] receiveMsg = new byte[512];
-    private DatagramPacket receivePacket;
-    private DatagramSocket receiveSocket;
-
-    private DatagramPacket sendPacket;
-    private DatagramSocket sendSocket;
+    private DatagramSocket datagramSocket;
 
     private static final Unicast unicast = new Unicast();
 
     private Unicast() {
         try {
             // 初始化接收Socket
-            receivePacket = new DatagramPacket(receiveMsg, receiveMsg.length);
-            receiveSocket = new DatagramSocket(Constants.UNICAST_PORT);
-            // 初始化发送Socket
-            sendSocket = new DatagramSocket();
+            datagramSocket = new DatagramSocket(Constants.UNICAST_PORT);
         } catch (SocketException e) {
             e.printStackTrace();
         }
@@ -37,7 +28,14 @@ public class Unicast {
         return unicast;
     }
 
-    public DatagramSocket getDatagramSocket() {
-        return sendSocket;
+    public DatagramSocket getUnicastDatagramSocket() {
+        return datagramSocket;
+    }
+
+    public void free() {
+        if (datagramSocket != null) {
+            datagramSocket.close();
+            datagramSocket = null;
+        }
     }
 }

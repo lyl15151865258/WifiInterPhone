@@ -102,6 +102,7 @@ public class ContactsFragment extends BaseFragment {
                 }
                 tvContactCount.setText(String.valueOf(contactList.size()) + "/" + String.valueOf(contactList.size()));
                 contactsAdapter.notifyDataSetChanged();
+                sendChangeIpBroadcast();
                 break;
             case R.id.btnUnSelectAll:
                 for (int i = 0; i < contactList.size(); i++) {
@@ -109,11 +110,28 @@ public class ContactsFragment extends BaseFragment {
                 }
                 tvContactCount.setText("0/" + String.valueOf(contactList.size()));
                 contactsAdapter.notifyDataSetChanged();
+                sendChangeIpBroadcast();
                 break;
             default:
                 break;
         }
     };
+
+    /**
+     * 待发送的IP发生了变化，发送广播通知
+     */
+    private void sendChangeIpBroadcast() {
+        Intent intent = new Intent();
+        intent.setAction("CHANGE_SEND_IP");
+        ArrayList<String> ipList = new ArrayList<>();
+        for (int i = 0; i < contactList.size(); i++) {
+            if (contactList.get(i).isShouldSend()) {
+                ipList.add(contactList.get(i).getIp().replace("/", ""));
+            }
+        }
+        intent.putStringArrayListExtra("IP", ipList);
+        mContext.sendBroadcast(intent);
+    }
 
     /**
      * onServiceConnected和onServiceDisconnected运行在UI线程中
@@ -176,6 +194,7 @@ public class ContactsFragment extends BaseFragment {
         }
         tvContactCount.setText(String.valueOf(sendCount) + "/" + String.valueOf(contactList.size()));
         contactsAdapter.notifyItemChanged(position);
+        sendChangeIpBroadcast();
     };
 
     private RecyclerView.OnScrollListener onScrollListener = new RecyclerView.OnScrollListener() {
@@ -259,6 +278,7 @@ public class ContactsFragment extends BaseFragment {
             tvContactCount.setText(String.valueOf(sendCount) + "/" + String.valueOf(contactList.size()));
             contactsAdapter.notifyItemRemoved(position);
             contactsAdapter.notifyItemRangeChanged(0, contactList.size());
+            sendChangeIpBroadcast();
         }
     }
 
@@ -277,6 +297,7 @@ public class ContactsFragment extends BaseFragment {
         }
         tvContactCount.setText(String.valueOf(sendCount) + "/" + String.valueOf(contactList.size()));
         contactsAdapter.notifyItemInserted(contactList.size() - 1);
+        sendChangeIpBroadcast();
     }
 
     @Override

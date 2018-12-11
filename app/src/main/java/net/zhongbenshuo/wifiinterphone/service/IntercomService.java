@@ -19,11 +19,13 @@ import net.zhongbenshuo.wifiinterphone.activity.MainActivity;
 import net.zhongbenshuo.wifiinterphone.constant.Command;
 import net.zhongbenshuo.wifiinterphone.job.Decoder;
 import net.zhongbenshuo.wifiinterphone.job.Encoder;
-import net.zhongbenshuo.wifiinterphone.job.Receiver;
+import net.zhongbenshuo.wifiinterphone.job.MulticastReceiver;
 import net.zhongbenshuo.wifiinterphone.job.Recorder;
-import net.zhongbenshuo.wifiinterphone.job.Sender;
+import net.zhongbenshuo.wifiinterphone.job.MulticastSender;
 import net.zhongbenshuo.wifiinterphone.job.SignInAndOutReq;
 import net.zhongbenshuo.wifiinterphone.job.Tracker;
+import net.zhongbenshuo.wifiinterphone.job.UnicastReceiver;
+import net.zhongbenshuo.wifiinterphone.job.UnicastSender;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,7 +36,7 @@ public class IntercomService extends Service {
 
     // 创建循环任务线程用于间隔的发送上线消息，获取局域网内其他的用户
     private ScheduledExecutorService discoverService = Executors.newScheduledThreadPool(1);
-    // 创建7个线程的固定大小线程池，分别执行DiscoverServer，以及输入、输出音频
+    // 创建8个线程的固定大小线程池，分别执行DiscoverServer，以及输入、输出音频
     private ExecutorService threadPool = Executors.newCachedThreadPool();
 
     // 加入、退出组播组消息
@@ -43,10 +45,12 @@ public class IntercomService extends Service {
     // 音频输入
     private Recorder recorder;
     private Encoder encoder;
-    private Sender sender;
+    private MulticastSender multicastSender;
+    private UnicastSender unicastSender;
 
     // 音频输出
-    private Receiver receiver;
+    private MulticastReceiver multicastReceiver;
+    private UnicastReceiver unicastReceiver;
     private Decoder decoder;
     private Tracker tracker;
 
@@ -182,15 +186,18 @@ public class IntercomService extends Service {
         // 初始化音频输入节点
         recorder = new Recorder(handler);
         encoder = new Encoder(handler);
-        sender = new Sender(handler);
-        // 初始化音频输出节点
-        receiver = new Receiver(handler);
+        multicastSender = new MulticastSender(handler);
+        unicastSender = new UnicastSender(handler);
+        multicastReceiver = new MulticastReceiver(handler);
+        unicastReceiver = new UnicastReceiver(handler);
         decoder = new Decoder(handler);
         tracker = new Tracker(handler);
         // 开启音频输入、输出
         threadPool.execute(encoder);
-        threadPool.execute(sender);
-        threadPool.execute(receiver);
+        threadPool.execute(multicastSender);
+        threadPool.execute(unicastSender);
+        threadPool.execute(multicastReceiver);
+        threadPool.execute(unicastReceiver);
         threadPool.execute(decoder);
         threadPool.execute(tracker);
     }
@@ -244,8 +251,10 @@ public class IntercomService extends Service {
         // 释放线程资源
         recorder.free();
         encoder.free();
-        sender.free();
-        receiver.free();
+        multicastSender.free();
+        unicastSender.free();
+        multicastReceiver.free();
+        unicastReceiver.free();
         decoder.free();
         tracker.free();
         // 释放线程池
