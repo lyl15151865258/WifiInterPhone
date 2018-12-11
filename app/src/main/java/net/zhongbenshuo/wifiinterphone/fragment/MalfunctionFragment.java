@@ -32,27 +32,27 @@ import java.util.List;
 public class MalfunctionFragment extends BaseFragment {
 
     private Context mContext;
-    private XRecyclerView xRVMalfunction;
+    private XRecyclerView rvMalfunction;
     private List<Malfunction> malfunctionList;
     private MalfunctionAdapter malfunctionAdapter;
     private boolean sIsScrolling = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_contacts, container, false);
+        View view = inflater.inflate(R.layout.fragment_malfunction, container, false);
         mContext = getContext();
-        xRVMalfunction = view.findViewById(R.id.xRVMalfunction);
+        rvMalfunction = view.findViewById(R.id.rvMalfunction);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(mContext);
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        xRVMalfunction.setLayoutManager(linearLayoutManager);
-        xRVMalfunction.setRefreshProgressStyle(ProgressStyle.BallSpinFadeLoader);
-        xRVMalfunction.setArrowImageView(R.drawable.iconfont_downgrey);
-        xRVMalfunction.getDefaultRefreshHeaderView().setRefreshTimeVisible(false);
-        xRVMalfunction.getDefaultFootView().setLoadingHint(getString(R.string.loading));
-        xRVMalfunction.getDefaultFootView().setNoMoreHint(getString(R.string.NoMoreData));
-        xRVMalfunction.addItemDecoration(new XRecyclerViewDivider(mContext, LinearLayoutManager.HORIZONTAL, 1, ContextCompat.getColor(mContext, R.color.gray_slight)));
+        rvMalfunction.setLayoutManager(linearLayoutManager);
+        rvMalfunction.setRefreshProgressStyle(ProgressStyle.BallSpinFadeLoader);
+        rvMalfunction.setArrowImageView(R.drawable.iconfont_downgrey);
+        rvMalfunction.getDefaultRefreshHeaderView().setRefreshTimeVisible(false);
+        rvMalfunction.getDefaultFootView().setLoadingHint(getString(R.string.loading));
+        rvMalfunction.getDefaultFootView().setNoMoreHint(getString(R.string.NoMoreData));
+        rvMalfunction.addItemDecoration(new XRecyclerViewDivider(mContext, LinearLayoutManager.HORIZONTAL, 1, ContextCompat.getColor(mContext, R.color.gray_slight)));
 
-        xRVMalfunction.setLoadingListener(new XRecyclerView.LoadingListener() {
+        rvMalfunction.setLoadingListener(new XRecyclerView.LoadingListener() {
             @Override
             public void onRefresh() {
                 new Thread(new Runnable() {
@@ -65,7 +65,7 @@ public class MalfunctionFragment extends BaseFragment {
                         }
                     }
                 }).start();
-                xRVMalfunction.refreshComplete();
+                rvMalfunction.refreshComplete();
             }
 
             @Override
@@ -80,8 +80,8 @@ public class MalfunctionFragment extends BaseFragment {
                         }
                     }
                 }).start();
-                xRVMalfunction.loadMoreComplete();
-                xRVMalfunction.setNoMore(true);
+                rvMalfunction.loadMoreComplete();
+                rvMalfunction.setNoMore(true);
             }
         });
         malfunctionList = new ArrayList<>();
@@ -95,8 +95,8 @@ public class MalfunctionFragment extends BaseFragment {
         }
         malfunctionAdapter = new MalfunctionAdapter(mContext, malfunctionList);
         malfunctionAdapter.setOnItemClickListener(onItemClickListener);
-        xRVMalfunction.setAdapter(malfunctionAdapter);
-        xRVMalfunction.addOnScrollListener(onScrollListener);
+        rvMalfunction.setAdapter(malfunctionAdapter);
+        rvMalfunction.addOnScrollListener(onScrollListener);
 
         return view;
     }

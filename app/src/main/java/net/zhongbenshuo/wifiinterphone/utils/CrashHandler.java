@@ -16,7 +16,7 @@ import net.zhongbenshuo.wifiinterphone.constant.Constants;
 import net.zhongbenshuo.wifiinterphone.network.ExceptionHandle;
 import net.zhongbenshuo.wifiinterphone.network.NetClient;
 import net.zhongbenshuo.wifiinterphone.network.NetworkSubscriber;
-import net.zhongbenshuo.wifiinterphone.service.VoiceService;
+import net.zhongbenshuo.wifiinterphone.service.IntercomService;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -130,7 +130,7 @@ public class CrashHandler implements UncaughtExceptionHandler {
         saveCatchInfo2File(ex);
 
         // 关闭Service
-        Intent intent0 = new Intent(mContext, VoiceService.class);
+        Intent intent0 = new Intent(mContext, IntercomService.class);
         mContext.stopService(intent0);
 
         //重启App

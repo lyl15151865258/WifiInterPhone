@@ -18,6 +18,11 @@ public class Constants {
     public static final String FAIL = "fail";
     public static final String SUCCESS = "success";
 
+    // 单播发送端口
+    public static final int UNICAST_PORT_SEND = 8856;
+    // 单播接收端口
+    public static final int UNICAST_PORT_RECEIVE = 8855;
+
     // 组播端口号
     public static final int MULTI_BROADCAST_PORT = 9999;
     // 组播地址

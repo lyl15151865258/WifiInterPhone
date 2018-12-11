@@ -8,6 +8,7 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.os.Vibrator;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -15,6 +16,7 @@ import android.support.v4.view.ViewPager;
 import android.os.Bundle;
 import android.support.v7.content.res.AppCompatResources;
 import android.text.TextPaint;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -25,9 +27,11 @@ import net.zhongbenshuo.wifiinterphone.constant.Permission;
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.fragment.ContactsFragment;
 import net.zhongbenshuo.wifiinterphone.fragment.MalfunctionFragment;
-import net.zhongbenshuo.wifiinterphone.service.VoiceService;
+import net.zhongbenshuo.wifiinterphone.service.IIntercomService;
+import net.zhongbenshuo.wifiinterphone.service.IntercomService;
 import net.zhongbenshuo.wifiinterphone.adapter.SelectModuleAdapter;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
+import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 import net.zhongbenshuo.wifiinterphone.widget.NoScrollViewPager;
 import net.zhongbenshuo.wifiinterphone.widget.dialog.CommonWarningDialog;
@@ -45,15 +49,15 @@ import java.util.List;
 
 public class MainActivity extends BaseActivity {
 
+    private final String TAG = "MainActivity";
     private Context mContext;
     private TextView tvSSID, tvIp, tvMessage;
     private NoScrollViewPager mViewpager;
     private ImageView ivTitleIndicator;
     private List<TextView> textViews;
-    private ServiceConnection serviceConnection;
-    private VoiceService voiceService;
     private Vibrator vibrator;
-    private final int REQUEST_PERMISSION = 1;
+    private IIntercomService intercomService;
+    private static final int REQUEST_PERMISSION = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +71,13 @@ public class MainActivity extends BaseActivity {
         boolean audioSatePermission = pkgManager.checkPermission(Manifest.permission.RECORD_AUDIO, getPackageName()) == PackageManager.PERMISSION_GRANTED;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !audioSatePermission) {
             ActivityCompat.requestPermissions(this, Permission.MICROPHONE, REQUEST_PERMISSION);
+        }
+
+        Intent intent = new Intent(mContext, IntercomService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
         }
 
     }
@@ -166,15 +177,8 @@ public class MainActivity extends BaseActivity {
         if (WifiUtil.WifiConnected(mContext)) {
             tvSSID.setText(WifiUtil.getSSID(mContext));
             tvIp.setText(WifiUtil.getLocalIPAddress());
-            Intent intent = new Intent(mContext, VoiceService.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent);
-            } else {
-                startService(intent);
-            }
-            if (voiceService == null) {
-                bindVoiceService();
-            }
+            Intent intent = new Intent(mContext, IntercomService.class);
+            bindService(intent, serviceConnection, BIND_AUTO_CREATE);
         } else {
             //提示是否连接WiFi
             CommonWarningDialog commonWarningDialog = new CommonWarningDialog(mContext, getString(R.string.notification_connect_wifi));
@@ -198,24 +202,20 @@ public class MainActivity extends BaseActivity {
     }
 
     /**
-     * 绑定service
+     * onServiceConnected和onServiceDisconnected运行在UI线程中
      */
-    private void bindVoiceService() {
-        serviceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-                VoiceService.VoiceServiceBinder binder = (VoiceService.VoiceServiceBinder) iBinder;
-                voiceService = binder.getService();
-            }
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            intercomService = IIntercomService.Stub.asInterface(service);
+            LogUtils.d(TAG, "绑定Service成功");
+        }
 
-            @Override
-            public void onServiceDisconnected(ComponentName componentName) {
-                voiceService = null;
-            }
-        };
-        Intent intent = new Intent(mContext, VoiceService.class);
-        bindService(intent, serviceConnection, BIND_AUTO_CREATE);
-    }
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            intercomService = null;
+        }
+    };
 
     private View.OnClickListener onClickListener = (v) -> {
         switch (v.getId()) {
@@ -240,15 +240,23 @@ public class MainActivity extends BaseActivity {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 tvMessage.setText(getString(R.string.releaseFinish));
                 vibrator.vibrate(50);
-                if (voiceService != null) {
-                    voiceService.setIsSending(true);
+                if (intercomService != null) {
+                    try {
+                        intercomService.startRecord();
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                 }
             } else if (event.getAction() == MotionEvent.ACTION_UP) {
                 v.performClick();
                 tvMessage.setText(getString(R.string.pressToSpeak));
                 vibrator.vibrate(50);
-                if (voiceService != null) {
-                    voiceService.setIsSending(false);
+                if (intercomService != null) {
+                    try {
+                        intercomService.stopRecord();
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
             return false;
@@ -268,10 +276,46 @@ public class MainActivity extends BaseActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (serviceConnection != null) {
-            unbindService(serviceConnection);
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_F2 || keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            tvMessage.setText(getString(R.string.releaseFinish));
+            if (intercomService != null) {
+                try {
+                    intercomService.startRecord();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+            return true;
         }
+        return super.onKeyDown(keyCode, event);
     }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if ((keyCode == KeyEvent.KEYCODE_F2 || keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            tvMessage.setText(getString(R.string.pressToSpeak));
+            if (intercomService != null) {
+                try {
+                    intercomService.stopRecord();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public void onBackPressed() {
+        // 发送离开群组消息
+        try {
+            intercomService.leaveGroup();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        super.onBackPressed();
+    }
+
 }

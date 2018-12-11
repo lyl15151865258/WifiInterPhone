@@ -21,6 +21,7 @@
     <string name="LanguageSettings">言語設定</string>
     <string name="AccessibilityFeatures">アクセシビリティ機能</string>
     <string name="PlayWithSpeakers">スピーカーで遊ぶ</string>
+    <string name="Version">バージョン</string>
     <string name="working">ウォーキートーキーサービス業務</string>
 
     <string name="Logout">ログアウト</string>

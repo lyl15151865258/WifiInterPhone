@@ -62,6 +62,8 @@ public class ContactsAdapter extends RecyclerView.Adapter {
             Glide.with(mContext).load(headIconUrl).apply(options).into(holder.ivContactIcon);
         }
 
+        holder.ivSelectStatus.setImageResource(contact.isShouldSend() ? R.drawable.checkbox_checked : R.drawable.checkbox_unchecked);
+
         holder.itemView.setOnClickListener((v) -> {
             if (mListener != null) {
                 mListener.onItemClick(position);
@@ -76,7 +78,7 @@ public class ContactsAdapter extends RecyclerView.Adapter {
 
     private class NewsViewHolder extends RecyclerView.ViewHolder {
         private TextView tvIp, tvDeviceModel, tvUserName;
-        private ImageView ivContactIcon;
+        private ImageView ivContactIcon, ivSelectStatus;
 
         private NewsViewHolder(View itemView) {
             super(itemView);
@@ -84,6 +86,7 @@ public class ContactsAdapter extends RecyclerView.Adapter {
             tvIp = itemView.findViewById(R.id.tvIp);
             tvDeviceModel = itemView.findViewById(R.id.tvDeviceModel);
             tvUserName = itemView.findViewById(R.id.tvUserName);
+            ivSelectStatus = itemView.findViewById(R.id.ivSelectStatus);
         }
     }
 

@@ -1,4 +1,4 @@
-package net.zhongbenshuo.wifiinterphone.network.lan;
+package net.zhongbenshuo.wifiinterphone.network.wlan;
 
 import net.zhongbenshuo.wifiinterphone.constant.Constants;
 

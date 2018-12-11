@@ -1,4 +1,4 @@
-package net.zhongbenshuo.wifiinterphone.network.lan;
+package net.zhongbenshuo.wifiinterphone.network.wlan;
 
 import net.zhongbenshuo.wifiinterphone.constant.Constants;
 
@@ -35,5 +35,9 @@ public class Unicast {
 
     public static Unicast getUnicast() {
         return unicast;
+    }
+
+    public DatagramSocket getDatagramSocket() {
+        return sendSocket;
     }
 }

@@ -21,6 +21,7 @@
     <string name="LanguageSettings">Language Settings</string>
     <string name="AccessibilityFeatures">Accessibility features</string>
     <string name="PlayWithSpeakers">Play with speakers</string>
+    <string name="Version">App version</string>
     <string name="working">Walkie-talkie service work</string>
 
     <string name="Logout">Sign out</string>

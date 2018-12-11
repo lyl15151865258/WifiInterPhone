@@ -54,14 +54,16 @@ public class IntercomService extends Service {
     public static final int DISCOVERING_RECEIVE = 1;
     public static final int DISCOVERING_LEAVE = 2;
 
+    private MyHandler handler = new MyHandler(this);
+
     /**
      * Service与Runnable的通信
      */
-    private static class AudioHandler extends Handler {
+    private static class MyHandler extends Handler {
 
         private IntercomService service;
 
-        private AudioHandler(IntercomService service) {
+        private MyHandler(IntercomService service) {
             this.service = service;
         }
 
@@ -77,8 +79,6 @@ public class IntercomService extends Service {
             }
         }
     }
-
-    private Handler handler = new AudioHandler(this);
 
     /**
      * 发现新的组播成员
@@ -169,8 +169,8 @@ public class IntercomService extends Service {
         // 初始化探测线程
         signInAndOutReq = new SignInAndOutReq(handler);
         signInAndOutReq.setCommand(Command.DISC_REQUEST);
-        // 启动探测局域网内其余用户的线程（每分钟扫描一次）
-        discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 10, TimeUnit.SECONDS);
+        // 启动探测局域网内其余用户的线程（每5秒扫描一次）
+        discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 5, TimeUnit.SECONDS);
         // 初始化JobHandler
         initJobHandler();
     }

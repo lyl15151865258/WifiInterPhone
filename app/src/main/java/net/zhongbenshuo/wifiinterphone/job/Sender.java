@@ -5,7 +5,7 @@ import android.os.Handler;
 import net.zhongbenshuo.wifiinterphone.constant.Constants;
 import net.zhongbenshuo.wifiinterphone.data.AudioData;
 import net.zhongbenshuo.wifiinterphone.data.MessageQueue;
-import net.zhongbenshuo.wifiinterphone.network.lan.Multicast;
+import net.zhongbenshuo.wifiinterphone.network.wlan.Multicast;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

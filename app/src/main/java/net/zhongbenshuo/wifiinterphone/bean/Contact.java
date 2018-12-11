@@ -18,6 +18,12 @@ public class Contact {
 
     private String iconUrl;
 
+    private boolean shouldSend = true;
+
+    public Contact(String ip) {
+        this.ip = ip;
+    }
+
     public String getIp() {
         return ip;
     }
@@ -48,5 +54,32 @@ public class Contact {
 
     public void setIconUrl(String iconUrl) {
         this.iconUrl = iconUrl;
+    }
+
+    public boolean isShouldSend() {
+        return shouldSend;
+    }
+
+    public void setShouldSend(boolean shouldSend) {
+        this.shouldSend = shouldSend;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Contact)) {
+            return false;
+        } else {
+            try {
+                Contact that = (Contact) o;
+                // 设备Mac地址一致就认为是同一个设备
+                return ip.equals(that.ip);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
     }
 }

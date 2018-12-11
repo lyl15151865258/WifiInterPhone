@@ -4,10 +4,47 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <net.zhongbenshuo.wifiinterphone.widget.xrecyclerview.XRecyclerView
-        android:id="@+id/xRVMalfunction"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rvContacts"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:overScrollMode="never" />
-    
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/dp_10"
+            android:text="Send/Total:"
+            android:textSize="@dimen/sp_16"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvContactCount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="@dimen/dp_10"
+            android:textSize="@dimen/sp_16"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnSelectAll"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="全选" />
+
+        <Button
+            android:id="@+id/btnUnSelectAll"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="全不选" />
+
+    </LinearLayout>
+
 </LinearLayout>

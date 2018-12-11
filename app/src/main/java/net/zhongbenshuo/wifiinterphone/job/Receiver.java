@@ -7,7 +7,7 @@ import net.zhongbenshuo.wifiinterphone.constant.Command;
 import net.zhongbenshuo.wifiinterphone.constant.Constants;
 import net.zhongbenshuo.wifiinterphone.data.AudioData;
 import net.zhongbenshuo.wifiinterphone.data.MessageQueue;
-import net.zhongbenshuo.wifiinterphone.network.lan.Multicast;
+import net.zhongbenshuo.wifiinterphone.network.wlan.Multicast;
 import net.zhongbenshuo.wifiinterphone.service.IntercomService;
 import net.zhongbenshuo.wifiinterphone.speex.Speex;
 import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;

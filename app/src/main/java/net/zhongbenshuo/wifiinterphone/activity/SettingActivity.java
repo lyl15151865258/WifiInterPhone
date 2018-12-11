@@ -5,10 +5,12 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
+import net.zhongbenshuo.wifiinterphone.utils.ApkUtils;
 import net.zhongbenshuo.wifiinterphone.utils.SharedPreferencesUtil;
 import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 
@@ -38,6 +40,7 @@ public class SettingActivity extends BaseActivity {
         findViewById(R.id.ll_languageSettings).setOnClickListener(onClickListener);
         findViewById(R.id.ll_AccessibilityFeatures).setOnClickListener(onClickListener);
         ((ToggleButton) findViewById(R.id.toggle_useSpeakers)).setOnCheckedChangeListener(onCheckedChangeListener);
+        ((TextView) findViewById(R.id.tvVersion)).setText(ApkUtils.getVersionName(mContext));
     }
 
     private View.OnClickListener onClickListener = (v) -> {

@@ -58,12 +58,6 @@
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
 
-        <!-- 主页面 -->
-        <activity
-            android:name=".activity.AudioActivity"
-            android:launchMode="singleTask"
-            android:screenOrientation="portrait" />
-
         <!-- 设置页面 -->
         <activity
             android:name=".activity.SettingActivity"
@@ -87,12 +81,6 @@
             android:name=".activity.ChooseLanguageActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
-
-        <!-- 语音服务 -->
-        <service
-            android:name="net.zhongbenshuo.wifiinterphone.service.VoiceService"
-            android:enabled="true"
-            android:persistent="true" />
 
         <!-- 局域网通信服务服务 -->
         <service

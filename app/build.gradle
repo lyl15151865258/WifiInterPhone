@@ -7,8 +7,8 @@ android {
         applicationId "net.zhongbenshuo.wifiinterphone"
         minSdkVersion 19
         targetSdkVersion 22
-        versionCode 1
-        versionName "1.0"
+        versionCode 20181212
+        versionName "1.1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         ndk {
             moduleName "libspeex"
