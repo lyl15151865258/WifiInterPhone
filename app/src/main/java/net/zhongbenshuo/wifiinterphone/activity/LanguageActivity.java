@@ -28,7 +28,7 @@ import java.util.List;
  * @version 1.0
  */
 
-public class ChooseLanguageActivity extends BaseActivity {
+public class LanguageActivity extends BaseActivity {
 
     private SharedPreferencesUtil sharedPreferencesUtil;
     private List<Language> languageList;

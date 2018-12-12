@@ -59,7 +59,7 @@ public class SettingActivity extends BaseActivity {
                 break;
             case R.id.ll_languageSettings:
                 // 语言设置
-                openActivity(ChooseLanguageActivity.class);
+                openActivity(LanguageActivity.class);
                 break;
             case R.id.ll_AccessibilityFeatures:
                 // 辅助功能

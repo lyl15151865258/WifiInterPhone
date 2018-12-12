@@ -6,7 +6,11 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 
 /**
- * Created by yanghao1 on 2017/5/15.
+ * 单播DatagramSocket单例
+ * Created at 2018/12/12 13:06
+ *
+ * @author LiYuliang
+ * @version 1.0
  */
 
 public class Unicast {

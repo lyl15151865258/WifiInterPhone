@@ -78,7 +78,7 @@
 
         <!-- 语言设置页面 -->
         <activity
-            android:name=".activity.ChooseLanguageActivity"
+            android:name=".activity.LanguageActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
 

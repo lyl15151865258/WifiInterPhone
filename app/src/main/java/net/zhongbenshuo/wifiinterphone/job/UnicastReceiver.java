@@ -17,7 +17,11 @@ import java.net.DatagramPacket;
 import java.util.Arrays;
 
 /**
- * Created by yanghao1 on 2017/4/12.
+ * 单播发送线程
+ * Created at 2018/12/12 13:04
+ *
+ * @author LiYuliang
+ * @version 1.0
  */
 
 public class UnicastReceiver extends JobHandler {

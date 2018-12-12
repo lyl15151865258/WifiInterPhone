@@ -32,6 +32,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 局域网通信服务
+ * Created at 2018/12/12 13:06
+ *
+ * @author LiYuliang
+ * @version 1.0
+ */
+
 public class IntercomService extends Service {
 
     // 创建循环任务线程用于间隔的发送上线消息，获取局域网内其他的用户

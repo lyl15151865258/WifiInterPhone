@@ -7,7 +7,11 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 
 /**
- * Created by yanghao1 on 2017/5/9.
+ * 组播MulticastSocket单例
+ * Created at 2018/12/12 13:06
+ *
+ * @author LiYuliang
+ * @version 1.0
  */
 
 public class Multicast {

@@ -9,7 +9,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
- * Created by yanghao1 on 2017/4/25.
+ * 消息队列
+ * Created at 2018/12/12 13:01
+ *
+ * @author LiYuliang
+ * @version 1.0
  */
 
 public class MessageQueue {

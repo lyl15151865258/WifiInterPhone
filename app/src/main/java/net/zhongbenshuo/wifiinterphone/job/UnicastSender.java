@@ -20,9 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Socket发送
+ * 单播接收线程
+ * Created at 2018/12/12 13:04
  *
- * @author yanghao1
+ * @author LiYuliang
+ * @version 1.0
  */
 
 public class UnicastSender extends JobHandler {

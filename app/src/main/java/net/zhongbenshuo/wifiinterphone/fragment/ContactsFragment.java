@@ -301,22 +301,14 @@ public class ContactsFragment extends BaseFragment {
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
+    public void onDestroy() {
+        super.onDestroy();
         if (intercomService != null && intercomService.asBinder().isBinderAlive()) {
             try {
                 intercomService.unRegisterCallback(intercomCallback);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
-            mContext.unbindService(serviceConnection);
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (serviceConnection != null) {
             mContext.unbindService(serviceConnection);
         }
     }

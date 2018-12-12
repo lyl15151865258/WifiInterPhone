@@ -9,26 +9,33 @@ import net.zhongbenshuo.wifiinterphone.data.MessageQueue;
 import net.zhongbenshuo.wifiinterphone.speex.Speex;
 
 /**
- * 音频录制数据格式ENCODING_PCM_16BIT，返回数据类型为short[]
+ * 音频录制线程
+ * Created at 2018/12/12 13:04
  *
- * @author yanghao1
+ * @author LiYuliang
+ * @version 1.0
  */
+
 public class Recorder extends JobHandler {
 
     private AudioRecord audioRecord;
-    // 音频大小
-    private int inAudioBufferSize;
     // 录音标志
     private boolean isRecording = false;
 
     public Recorder(Handler handler) {
         super(handler);
         // 获取音频数据缓冲段大小
-        inAudioBufferSize = AudioRecord.getMinBufferSize(
-                Constants.sampleRateInHz, Constants.inputChannelConfig, Constants.audioFormat);
+        int inAudioBufferSize = AudioRecord.getMinBufferSize(
+                Constants.sampleRateInHz,
+                Constants.inputChannelConfig,
+                Constants.audioFormat);
         // 初始化音频录制
-        audioRecord = new AudioRecord(Constants.audioSource,
-                Constants.sampleRateInHz, Constants.inputChannelConfig, Constants.audioFormat, inAudioBufferSize);
+        audioRecord = new AudioRecord(
+                Constants.audioSource,
+                Constants.sampleRateInHz,
+                Constants.inputChannelConfig,
+                Constants.audioFormat,
+                inAudioBufferSize);
     }
 
     public boolean isRecording() {

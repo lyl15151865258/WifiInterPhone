@@ -11,10 +11,13 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 
 /**
- * Socket发送
+ * 组播发送线程
+ * Created at 2018/12/12 13:03
  *
- * @author yanghao1
+ * @author LiYuliang
+ * @version 1.0
  */
+
 public class MulticastSender extends JobHandler {
 
     public MulticastSender(Handler handler) {

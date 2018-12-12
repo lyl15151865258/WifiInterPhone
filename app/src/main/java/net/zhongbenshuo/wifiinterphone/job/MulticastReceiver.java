@@ -17,7 +17,11 @@ import java.net.DatagramPacket;
 import java.util.Arrays;
 
 /**
- * Created by yanghao1 on 2017/4/12.
+ * 组播接收线程
+ * Created at 2018/12/12 13:03
+ *
+ * @author LiYuliang
+ * @version 1.0
  */
 
 public class MulticastReceiver extends JobHandler {

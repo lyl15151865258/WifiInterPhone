@@ -1,7 +1,11 @@
 package net.zhongbenshuo.wifiinterphone.constant;
 
 /**
- * Created by yanghao1 on 2017/4/13.
+ * 指令类别标记
+ * Created at 2018/12/12 13:00
+ *
+ * @author LiYuliang
+ * @version 1.0
  */
 
 public class Command {

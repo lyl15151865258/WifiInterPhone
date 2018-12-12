@@ -8,9 +8,12 @@ import net.zhongbenshuo.wifiinterphone.utils.AudioDataUtil;
 
 /**
  * 音频编码
+ * Created at 2018/12/12 13:02
  *
- * @author yanghao1
+ * @author LiYuliang
+ * @version 1.0
  */
+
 public class Encoder extends JobHandler {
 
     public Encoder(Handler handler) {
