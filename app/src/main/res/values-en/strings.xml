@@ -20,6 +20,7 @@
     <string name="WifiSettings">Wifi Settings</string>
     <string name="LanguageSettings">Language Settings</string>
     <string name="AccessibilityFeatures">Accessibility features</string>
+    <string name="SendMode">Sound transmission method</string>
     <string name="PlayWithSpeakers">Play with speakers</string>
     <string name="Version">App version</string>
     <string name="working">Walkie-talkie service work</string>
@@ -44,5 +45,9 @@
 
     <string name="accessibility_description">Key capture</string>
     <string name="accessibility_name">WifiInterPhone(Recommended to open)</string>
+
+    <string name="send_wlan_unicast">WLAN unicast</string>
+    <string name="send_wlan_broadcast">WLAN broadcast</string>
+    <string name="send_wan">Wan</string>
 
 </resources>

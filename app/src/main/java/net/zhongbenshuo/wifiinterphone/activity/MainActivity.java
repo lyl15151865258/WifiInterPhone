@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -23,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import net.zhongbenshuo.wifiinterphone.broadcast.MediaButtonReceiver;
 import net.zhongbenshuo.wifiinterphone.constant.Permission;
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.fragment.ContactsFragment;
@@ -49,7 +51,7 @@ import java.util.List;
 
 public class MainActivity extends BaseActivity {
 
-    private final String TAG = "MainActivity";
+    private static final String TAG = "MainActivity";
     private Context mContext;
     private TextView tvSSID, tvIp, tvMessage;
     private NoScrollViewPager mViewpager;
@@ -58,6 +60,8 @@ public class MainActivity extends BaseActivity {
     private Vibrator vibrator;
     private IIntercomService intercomService;
     private static final int REQUEST_PERMISSION = 1;
+
+    private MediaButtonReceiver mediaButtonReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +84,7 @@ public class MainActivity extends BaseActivity {
             startService(intent);
         }
 
+        mediaButtonReceiver = new MediaButtonReceiver(this);
     }
 
     private void initView() {
@@ -275,37 +280,37 @@ public class MainActivity extends BaseActivity {
         }
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if ((keyCode == KeyEvent.KEYCODE_F2 || keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
-            tvMessage.setText(getString(R.string.releaseFinish));
-            if (intercomService != null) {
-                try {
-                    intercomService.startRecord();
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            }
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
-    }
-
-    @Override
-    public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if ((keyCode == KeyEvent.KEYCODE_F2 || keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
-            tvMessage.setText(getString(R.string.pressToSpeak));
-            if (intercomService != null) {
-                try {
-                    intercomService.stopRecord();
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            }
-            return true;
-        }
-        return super.onKeyUp(keyCode, event);
-    }
+//    @Override
+//    public boolean onKeyDown(int keyCode, KeyEvent event) {
+//        if ((keyCode == KeyEvent.KEYCODE_F2 || keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+//            tvMessage.setText(getString(R.string.releaseFinish));
+//            if (intercomService != null) {
+//                try {
+//                    intercomService.startRecord();
+//                } catch (RemoteException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            return true;
+//        }
+//        return super.onKeyDown(keyCode, event);
+//    }
+//
+//    @Override
+//    public boolean onKeyUp(int keyCode, KeyEvent event) {
+//        if ((keyCode == KeyEvent.KEYCODE_F2 || keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+//            tvMessage.setText(getString(R.string.pressToSpeak));
+//            if (intercomService != null) {
+//                try {
+//                    intercomService.stopRecord();
+//                } catch (RemoteException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            return true;
+//        }
+//        return super.onKeyUp(keyCode, event);
+//    }
 
     @Override
     public void onBackPressed() {
@@ -316,6 +321,15 @@ public class MainActivity extends BaseActivity {
             e.printStackTrace();
         }
         super.onBackPressed();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mediaButtonReceiver.unregisterHeadsetReceiver();
+        if (mediaButtonReceiver != null) {
+            unregisterReceiver(mediaButtonReceiver);
+        }
     }
 
 }

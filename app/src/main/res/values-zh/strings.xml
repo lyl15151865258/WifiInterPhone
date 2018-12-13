@@ -20,6 +20,7 @@
     <string name="WifiSettings">Wifi设置</string>
     <string name="LanguageSettings">语言设置</string>
     <string name="AccessibilityFeatures">辅助功能</string>
+    <string name="SendMode">声音传输方式</string>
     <string name="PlayWithSpeakers">使用扬声器播放</string>
     <string name="Version">软件版本</string>
     <string name="working">对讲机服务工作中</string>
@@ -44,5 +45,9 @@
 
     <string name="accessibility_description">按键捕获</string>
     <string name="accessibility_name">局域网对讲机(推荐开启)</string>
+
+    <string name="send_wlan_unicast">局域网单播</string>
+    <string name="send_wlan_broadcast">局域网广播</string>
+    <string name="send_wan">广域网</string>
 
 </resources>

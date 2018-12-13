@@ -26,6 +26,7 @@ public class SettingActivity extends BaseActivity {
 
     private Context mContext;
     private SharedPreferencesUtil sharedPreferencesUtil;
+    private TextView tvSendMethod;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +40,30 @@ public class SettingActivity extends BaseActivity {
         findViewById(R.id.ll_wifiSettings).setOnClickListener(onClickListener);
         findViewById(R.id.ll_languageSettings).setOnClickListener(onClickListener);
         findViewById(R.id.ll_AccessibilityFeatures).setOnClickListener(onClickListener);
+        findViewById(R.id.llSendMode).setOnClickListener(onClickListener);
+        findViewById(R.id.btn_exit).setOnClickListener(onClickListener);
         ((ToggleButton) findViewById(R.id.toggle_useSpeakers)).setOnCheckedChangeListener(onCheckedChangeListener);
         ((TextView) findViewById(R.id.tvVersion)).setText(ApkUtils.getVersionName(mContext));
+        tvSendMethod = findViewById(R.id.tvSendMethod);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        switch ((int) sharedPreferencesUtil.getData("broadcast", 0)) {
+            case 0:
+                tvSendMethod.setText(getString(R.string.send_wlan_unicast));
+                break;
+            case 1:
+                tvSendMethod.setText(getString(R.string.send_wlan_broadcast));
+                break;
+            case 2:
+                tvSendMethod.setText(getString(R.string.send_wan));
+                break;
+            default:
+                tvSendMethod.setText("");
+                break;
+        }
     }
 
     private View.OnClickListener onClickListener = (v) -> {
@@ -69,6 +92,14 @@ public class SettingActivity extends BaseActivity {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                break;
+            case R.id.llSendMode:
+                // 声音传输方式
+                openActivity(SendMethodActivity.class);
+                break;
+            case R.id.btn_exit:
+                // 退出程序
+                ActivityController.exit();
                 break;
             default:
                 break;

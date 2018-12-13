@@ -20,6 +20,7 @@
     <string name="WifiSettings">Wi-Fi設定</string>
     <string name="LanguageSettings">言語設定</string>
     <string name="AccessibilityFeatures">アクセシビリティ機能</string>
+    <string name="SendMode">音声伝送方式</string>
     <string name="PlayWithSpeakers">スピーカーで遊ぶ</string>
     <string name="Version">バージョン</string>
     <string name="working">ウォーキートーキーサービス業務</string>
@@ -44,5 +45,9 @@
 
     <string name="accessibility_description">キーキャプチャ</string>
     <string name="accessibility_name">トランシーバー(オープンにおすすめ)</string>
+
+    <string name="send_wlan_unicast">LANユニキャスト</string>
+    <string name="send_wlan_broadcast">LANブロードキャスト</string>
+    <string name="send_wan">広域ネットワーク</string>
 
 </resources>

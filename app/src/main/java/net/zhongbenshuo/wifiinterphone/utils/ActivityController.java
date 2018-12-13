@@ -91,7 +91,7 @@ public class ActivityController {
     }
 
     /**
-     * 退出程序时清空账号和版本对象，并删除所有Activity
+     * 退出程序
      */
     public static void exit() {
         List<Activity> delList = new ArrayList<>();
@@ -102,6 +102,7 @@ public class ActivityController {
             }
         }
         activities.removeAll(delList);
+        android.os.Process.killProcess(android.os.Process.myPid());
     }
 
     public Activity getCurrentActivity() {
