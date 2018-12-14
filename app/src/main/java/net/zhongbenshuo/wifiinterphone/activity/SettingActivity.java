@@ -25,7 +25,7 @@ import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 public class SettingActivity extends BaseActivity {
 
     private Context mContext;
-    private TextView tvSendMethod;
+    private TextView tvSendMethod, tvSetName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,13 +35,14 @@ public class SettingActivity extends BaseActivity {
         MyToolbar toolbar = findViewById(R.id.myToolbar);
         toolbar.initToolBar(this, toolbar, getString(R.string.settings), R.drawable.back_white, onClickListener);
         findViewById(R.id.ll_serverSettings).setOnClickListener(onClickListener);
+        findViewById(R.id.ll_setName).setOnClickListener(onClickListener);
         findViewById(R.id.ll_wifiSettings).setOnClickListener(onClickListener);
         findViewById(R.id.ll_languageSettings).setOnClickListener(onClickListener);
-        findViewById(R.id.ll_AccessibilityFeatures).setOnClickListener(onClickListener);
         findViewById(R.id.llSendMode).setOnClickListener(onClickListener);
         findViewById(R.id.btn_exit).setOnClickListener(onClickListener);
         ((ToggleButton) findViewById(R.id.toggle_useSpeakers)).setOnCheckedChangeListener(onCheckedChangeListener);
         ((TextView) findViewById(R.id.tvVersion)).setText(ApkUtils.getVersionName(mContext));
+        tvSetName = findViewById(R.id.tvSetName);
         tvSendMethod = findViewById(R.id.tvSendMethod);
     }
 
@@ -62,6 +63,7 @@ public class SettingActivity extends BaseActivity {
                 tvSendMethod.setText("");
                 break;
         }
+        tvSetName.setText(SPHelper.getString("UserName", ""));
     }
 
     private View.OnClickListener onClickListener = (v) -> {
@@ -73,6 +75,10 @@ public class SettingActivity extends BaseActivity {
                 // 语音测试
                 openActivity(MediaTestActivity.class);
                 break;
+            case R.id.ll_setName:
+                // 姓名修改
+                openActivity(SetNameActivity.class);
+                break;
             case R.id.ll_wifiSettings:
                 // Wifi设置
                 Intent wifiSettingsIntent = new Intent("android.settings.WIFI_SETTINGS");
@@ -81,15 +87,6 @@ public class SettingActivity extends BaseActivity {
             case R.id.ll_languageSettings:
                 // 语言设置
                 openActivity(LanguageActivity.class);
-                break;
-            case R.id.ll_AccessibilityFeatures:
-                // 辅助功能
-                try {
-                    Intent intent = new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                    startActivity(intent);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
                 break;
             case R.id.llSendMode:
                 // 声音传输方式

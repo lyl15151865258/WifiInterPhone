@@ -9,12 +9,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
-
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.bean.Contact;
-import net.zhongbenshuo.wifiinterphone.constant.NetWork;
 
 import java.util.List;
 
@@ -48,19 +44,7 @@ public class ContactsAdapter extends RecyclerView.Adapter {
         NewsViewHolder holder = (NewsViewHolder) viewHolder;
         Contact contact = contactList.get(position);
         holder.tvIp.setText(contact.getIp());
-        holder.tvDeviceModel.setText(contact.getDeviceModel());
         holder.tvUserName.setText(contact.getUserName());
-
-        String userIconUrl = contact.getIconUrl();
-        if (userIconUrl != null && !userIconUrl.isEmpty()) {
-            String headIconUrl = "http://" + NetWork.SERVER_HOST_MAIN + ":" + NetWork.SERVER_PORT_MAIN + "/" + userIconUrl.replace("\\", "/");
-            // 加载头像
-            RequestOptions options = new RequestOptions()
-                    .error(R.drawable.photo_user)
-                    .placeholder(R.drawable.photo_user)
-                    .dontAnimate();
-            Glide.with(mContext).load(headIconUrl).apply(options).into(holder.ivContactIcon);
-        }
 
         holder.ivSelectStatus.setImageResource(contact.isShouldSend() ? R.drawable.checkbox_checked : R.drawable.checkbox_unchecked);
 
@@ -77,14 +61,12 @@ public class ContactsAdapter extends RecyclerView.Adapter {
     }
 
     private class NewsViewHolder extends RecyclerView.ViewHolder {
-        private TextView tvIp, tvDeviceModel, tvUserName;
-        private ImageView ivContactIcon, ivSelectStatus;
+        private TextView tvIp, tvUserName;
+        private ImageView ivSelectStatus;
 
         private NewsViewHolder(View itemView) {
             super(itemView);
-            ivContactIcon = itemView.findViewById(R.id.ivContactIcon);
             tvIp = itemView.findViewById(R.id.tvIp);
-            tvDeviceModel = itemView.findViewById(R.id.tvDeviceModel);
             tvUserName = itemView.findViewById(R.id.tvUserName);
             ivSelectStatus = itemView.findViewById(R.id.ivSelectStatus);
         }

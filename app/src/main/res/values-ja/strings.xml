@@ -17,9 +17,12 @@
     <string name="dialog_input_continue">続ける</string>
     <string name="notification_connect_wifi">あなたは現在WiFiに接続されていません。接続しようとしていますか</string>
     <string name="MediaTest">音声テスト</string>
+    <string name="SetName">私の名前</string>
+    <string name="ModifyName">名前を変更する</string>
+    <string name="TypeInName">名前を入力してください</string>
+    <string name="ConfirmModification">修正を確認する</string>
     <string name="WifiSettings">Wi-Fi設定</string>
     <string name="LanguageSettings">言語設定</string>
-    <string name="AccessibilityFeatures">アクセシビリティ機能</string>
     <string name="SendMode">音声伝送方式</string>
     <string name="PlayWithSpeakers">スピーカーで遊ぶ</string>
     <string name="Version">バージョン</string>

@@ -14,16 +14,17 @@ public class Contact implements Serializable {
 
     private String ip;
 
-    private String deviceModel;
-
     private String userName;
-
-    private String iconUrl;
 
     private boolean shouldSend = true;
 
     public Contact(String ip) {
         this.ip = ip;
+    }
+
+    public Contact(String ip, String userName) {
+        this.ip = ip;
+        this.userName = userName;
     }
 
     public String getIp() {
@@ -34,28 +35,12 @@ public class Contact implements Serializable {
         this.ip = ip;
     }
 
-    public String getDeviceModel() {
-        return deviceModel;
-    }
-
-    public void setDeviceModel(String deviceModel) {
-        this.deviceModel = deviceModel;
-    }
-
     public String getUserName() {
         return userName;
     }
 
     public void setUserName(String userName) {
         this.userName = userName;
-    }
-
-    public String getIconUrl() {
-        return iconUrl;
-    }
-
-    public void setIconUrl(String iconUrl) {
-        this.iconUrl = iconUrl;
     }
 
     public boolean isShouldSend() {

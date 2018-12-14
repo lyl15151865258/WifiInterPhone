@@ -76,6 +76,12 @@
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
 
+        <!-- 姓名设置页面 -->
+        <activity
+            android:name=".activity.SetNameActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" />
+
         <!-- 语言设置页面 -->
         <activity
             android:name=".activity.LanguageActivity"

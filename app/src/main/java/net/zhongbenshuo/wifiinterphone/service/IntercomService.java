@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -20,6 +21,7 @@ import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.activity.MainActivity;
 import net.zhongbenshuo.wifiinterphone.broadcast.BaseBroadcastReceiver;
 import net.zhongbenshuo.wifiinterphone.constant.Command;
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.job.Decoder;
 import net.zhongbenshuo.wifiinterphone.job.Encoder;
 import net.zhongbenshuo.wifiinterphone.job.MulticastReceiver;
@@ -93,9 +95,15 @@ public class IntercomService extends Service {
             if (msg.what == DISCOVERING_SEND) {
                 Log.i("IntercomService", "发送消息");
             } else if (msg.what == DISCOVERING_RECEIVE) {
-                service.findNewUser((String) msg.obj);
+                Bundle bundle = msg.getData();
+                String address = bundle.getString("address");
+                String name = bundle.getString("name");
+                service.findNewUser(address, name);
             } else if (msg.what == DISCOVERING_LEAVE) {
-                service.removeUser((String) msg.obj);
+                Bundle bundle = msg.getData();
+                String address = bundle.getString("address");
+                String name = bundle.getString("name");
+                service.removeUser(address, name);
             }
         }
     }
@@ -104,14 +112,15 @@ public class IntercomService extends Service {
      * 发现新的组播成员
      *
      * @param ipAddress IP地址
+     * @param name      用户姓名
      */
-    private void findNewUser(String ipAddress) {
+    private void findNewUser(String ipAddress, String name) {
         final int size = mCallbackList.beginBroadcast();
         for (int i = 0; i < size; i++) {
             IIntercomCallback callback = mCallbackList.getBroadcastItem(i);
             if (callback != null) {
                 try {
-                    callback.findNewUser(ipAddress);
+                    callback.findNewUser(ipAddress, name);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -124,14 +133,15 @@ public class IntercomService extends Service {
      * 删除用户显示
      *
      * @param ipAddress IP地址
+     * @param name      用户姓名
      */
-    private void removeUser(String ipAddress) {
+    private void removeUser(String ipAddress, String name) {
         final int size = mCallbackList.beginBroadcast();
         for (int i = 0; i < size; i++) {
             IIntercomCallback callback = mCallbackList.getBroadcastItem(i);
             if (callback != null) {
                 try {
-                    callback.removeUser(ipAddress);
+                    callback.removeUser(ipAddress, name);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -192,10 +202,14 @@ public class IntercomService extends Service {
         showNotification();
     }
 
+    /**
+     * 发送数据包，检测局域网内其他设备
+     */
     private void initData() {
         // 初始化探测线程
         signInAndOutReq = new SignInAndOutReq(handler);
-        signInAndOutReq.setCommand(Command.DISC_REQUEST);
+        String name = SPHelper.getString("UserName", "");
+        signInAndOutReq.setCommand(Command.DISC_REQUEST + "," + name);
         // 启动探测局域网内其余用户的线程（每5秒扫描一次）
         discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 5, TimeUnit.SECONDS);
         // 初始化JobHandler

@@ -51,6 +51,34 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/ll_setName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_10"
+                android:background="@color/white"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="@dimen/dp_5">
+
+                <TextView
+                    android:layout_width="0px"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:padding="@dimen/dp_5"
+                    android:text="@string/SetName"
+                    android:textSize="@dimen/sp_18" />
+
+                <TextView
+                    android:id="@+id/tvSetName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="@dimen/dp_5"
+                    android:drawableEnd="@drawable/ic_arrow_right"
+                    android:gravity="center" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/ll_wifiSettings"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -94,33 +122,6 @@
                     android:gravity="center_vertical"
                     android:padding="@dimen/dp_5"
                     android:text="@string/LanguageSettings"
-                    android:textSize="@dimen/sp_18" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_marginEnd="@dimen/dp_5"
-                    android:drawableEnd="@drawable/ic_arrow_right"
-                    android:gravity="center" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/ll_AccessibilityFeatures"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/dp_10"
-                android:background="@color/white"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="@dimen/dp_5">
-
-                <TextView
-                    android:layout_width="0px"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center_vertical"
-                    android:padding="@dimen/dp_5"
-                    android:text="@string/AccessibilityFeatures"
                     android:textSize="@dimen/sp_18" />
 
                 <TextView

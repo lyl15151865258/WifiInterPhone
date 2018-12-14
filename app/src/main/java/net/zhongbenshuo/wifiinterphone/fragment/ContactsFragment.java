@@ -4,7 +4,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -23,6 +22,7 @@ import com.bumptech.glide.Glide;
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.adapter.ContactsAdapter;
 import net.zhongbenshuo.wifiinterphone.bean.Contact;
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.service.IIntercomCallback;
 import net.zhongbenshuo.wifiinterphone.service.IIntercomService;
 import net.zhongbenshuo.wifiinterphone.service.IntercomService;
@@ -69,10 +69,7 @@ public class ContactsFragment extends BaseFragment {
         rvContacts.addItemDecoration(new RecyclerViewDivider(mContext, LinearLayoutManager.HORIZONTAL, 1, ContextCompat.getColor(mContext, R.color.gray_slight)));
 
         contactList = new ArrayList<>();
-        Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress());
-        contact.setUserName("我");
-        contact.setIconUrl("");
-        contact.setDeviceModel(Build.MODEL);
+        Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress(),SPHelper.getString("UserName", ""));
         contactList.add(contact);
 
         contactsAdapter = new ContactsAdapter(mContext, contactList);
@@ -159,26 +156,31 @@ public class ContactsFragment extends BaseFragment {
      */
     private IIntercomCallback intercomCallback = new IIntercomCallback.Stub() {
         @Override
-        public void findNewUser(String ipAddress) {
-            sendMsg2MainThread(ipAddress, FOUND_NEW_USER);
+        public void findNewUser(String ipAddress, String name) {
+            sendMsg2MainThread(ipAddress, name, FOUND_NEW_USER);
         }
 
         @Override
-        public void removeUser(String ipAddress) {
-            sendMsg2MainThread(ipAddress, REMOVE_USER);
+        public void removeUser(String ipAddress, String name) {
+            sendMsg2MainThread(ipAddress, name, REMOVE_USER);
         }
     };
 
     /**
      * 发送Handler消息
      *
-     * @param content 内容
+     * @param address IP地址
+     * @param name    姓名
      * @param msgWhat 消息类型
      */
-    private void sendMsg2MainThread(String content, int msgWhat) {
+    private void sendMsg2MainThread(String address, String name, int msgWhat) {
         Message msg = new Message();
         msg.what = msgWhat;
-        msg.obj = content;
+        msg.obj = address;
+        Bundle bundle = new Bundle();
+        bundle.putString("address", address);
+        bundle.putString("name", name);
+        msg.setData(bundle);
         handler.sendMessage(msg);
     }
 
@@ -239,7 +241,10 @@ public class ContactsFragment extends BaseFragment {
             ContactsFragment contactsFragment = activityWeakReference.get();
             if (contactsFragment != null) {
                 if (msg.what == FOUND_NEW_USER) {
-                    contactsFragment.foundNewUser((String) msg.obj);
+                    Bundle bundle = msg.getData();
+                    String address = bundle.getString("address", "");
+                    String name = bundle.getString("name", "");
+                    contactsFragment.foundNewUser(address, name);
                 } else if (msg.what == REMOVE_USER) {
                     contactsFragment.removeExistUser((String) msg.obj);
                 }
@@ -251,9 +256,10 @@ public class ContactsFragment extends BaseFragment {
      * 发现新的用户地址
      *
      * @param ipAddress 用户IP地址
+     * @param name      用户姓名
      */
-    public void foundNewUser(String ipAddress) {
-        Contact contact = new Contact(ipAddress);
+    public void foundNewUser(String ipAddress, String name) {
+        Contact contact = new Contact(ipAddress, name);
         if (!contactList.contains(contact)) {
             addNewUser(contact);
         }

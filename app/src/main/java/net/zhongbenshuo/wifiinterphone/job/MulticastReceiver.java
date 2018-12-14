@@ -1,5 +1,6 @@
 package net.zhongbenshuo.wifiinterphone.job;
 
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
@@ -11,6 +12,7 @@ import net.zhongbenshuo.wifiinterphone.data.MessageQueue;
 import net.zhongbenshuo.wifiinterphone.network.wlan.Multicast;
 import net.zhongbenshuo.wifiinterphone.service.IntercomService;
 import net.zhongbenshuo.wifiinterphone.speex.Speex;
+import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 
 import java.io.IOException;
@@ -46,9 +48,8 @@ public class MulticastReceiver extends JobHandler {
                 e.printStackTrace();
             }
             // 判断数据报文类型，并做相应处理
-            if (datagramPacket.getLength() == Command.DISC_REQUEST.getBytes().length ||
-                    datagramPacket.getLength() == Command.DISC_LEAVE.getBytes().length ||
-                    datagramPacket.getLength() == Command.DISC_RESPONSE.getBytes().length) {
+            String content = new String(datagramPacket.getData()).trim();
+            if (content.startsWith(Command.DISC_REQUEST) || content.startsWith(Command.DISC_LEAVE) || content.startsWith(Command.DISC_RESPONSE)) {
                 handleCommandData(datagramPacket);
                 SPHelper.save("CANT_SPEAK", false);
             } else {
@@ -65,9 +66,10 @@ public class MulticastReceiver extends JobHandler {
      */
     private void handleCommandData(DatagramPacket packet) {
         String content = new String(packet.getData()).trim();
-        if (content.equals(Command.DISC_REQUEST) &&
+        LogUtils.d("PackageContent", "MulticastReceiver:" + content);
+        if (content.startsWith(Command.DISC_REQUEST) &&
                 !packet.getAddress().toString().equals("/" + WifiUtil.getLocalIPAddress())) {
-            byte[] feedback = Command.DISC_RESPONSE.getBytes();
+            byte[] feedback = (Command.DISC_RESPONSE + "," + SPHelper.getString("UserName", "")).getBytes();
             // 发送数据
             DatagramPacket sendPacket = new DatagramPacket(feedback, feedback.length,
                     packet.getAddress(), Constants.MULTI_BROADCAST_PORT);
@@ -76,15 +78,17 @@ public class MulticastReceiver extends JobHandler {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            String name = content.split(",")[1];
             // 发送Handler消息
-            sendMsg2MainThread(packet.getAddress().toString(), IntercomService.DISCOVERING_RECEIVE);
-        } else if (content.equals(Command.DISC_RESPONSE) &&
+            sendMsg2MainThread(packet.getAddress().toString(), name, IntercomService.DISCOVERING_RECEIVE);
+        } else if (content.startsWith(Command.DISC_RESPONSE) &&
                 !packet.getAddress().toString().equals("/" + WifiUtil.getLocalIPAddress())) {
+            String name = content.split(",")[1];
             // 发送Handler消息
-            sendMsg2MainThread(packet.getAddress().toString(), IntercomService.DISCOVERING_RECEIVE);
-        } else if (content.equals(Command.DISC_LEAVE) &&
+            sendMsg2MainThread(packet.getAddress().toString(), name, IntercomService.DISCOVERING_RECEIVE);
+        } else if (content.startsWith(Command.DISC_LEAVE) &&
                 !packet.getAddress().toString().equals("/" + WifiUtil.getLocalIPAddress())) {
-            sendMsg2MainThread(packet.getAddress().toString(), IntercomService.DISCOVERING_LEAVE);
+            sendMsg2MainThread(packet.getAddress().toString(), "", IntercomService.DISCOVERING_LEAVE);
         }
     }
 
@@ -102,12 +106,16 @@ public class MulticastReceiver extends JobHandler {
     /**
      * 发送Handler消息
      *
-     * @param content 内容
+     * @param address IP地址
+     * @param name    姓名
      */
-    private void sendMsg2MainThread(String content, int msgWhat) {
+    private void sendMsg2MainThread(String address, String name, int msgWhat) {
         Message msg = new Message();
         msg.what = msgWhat;
-        msg.obj = content;
+        Bundle bundle = new Bundle();
+        bundle.putString("address", address);
+        bundle.putString("name", name);
+        msg.setData(bundle);
         handler.sendMessage(msg);
     }
 
