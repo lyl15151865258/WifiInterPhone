@@ -7,9 +7,9 @@ import android.os.Environment;
 import android.os.StrictMode;
 import android.util.DisplayMetrics;
 
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.utils.CrashHandler;
 import net.zhongbenshuo.wifiinterphone.utils.MyLifecycleHandler;
-import net.zhongbenshuo.wifiinterphone.utils.SharedPreferencesUtil;
 
 import java.io.File;
 
@@ -38,7 +38,7 @@ public class WifiInterPhoneApplication extends Application {
         super.onCreate();
         mContext = getApplicationContext();
         instance = this;
-        SharedPreferencesUtil.init(this);
+        SPHelper.init(this);
         //注册Activity生命周期回调
         registerActivityLifecycleCallbacks(new MyLifecycleHandler());
         // 捕捉异常

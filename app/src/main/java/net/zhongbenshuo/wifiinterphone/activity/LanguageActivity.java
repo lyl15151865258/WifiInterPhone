@@ -12,8 +12,8 @@ import android.widget.ImageView;
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.adapter.ChooseLanguageAdapter;
 import net.zhongbenshuo.wifiinterphone.bean.Language;
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
-import net.zhongbenshuo.wifiinterphone.utils.SharedPreferencesUtil;
 import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 import net.zhongbenshuo.wifiinterphone.widget.RecyclerViewDivider;
 
@@ -30,7 +30,6 @@ import java.util.List;
 
 public class LanguageActivity extends BaseActivity {
 
-    private SharedPreferencesUtil sharedPreferencesUtil;
     private List<Language> languageList;
     private ChooseLanguageAdapter chooseLanguageAdapter;
 
@@ -38,7 +37,6 @@ public class LanguageActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_choose_language);
-        sharedPreferencesUtil = SharedPreferencesUtil.getInstance();
         MyToolbar toolbar = findViewById(R.id.myToolbar);
         toolbar.initToolBar(this, toolbar, getString(R.string.ChooseLanguage), R.drawable.back_white, onClickListener);
         RecyclerView recyclerViewLanguage = findViewById(R.id.recyclerView_language);
@@ -56,7 +54,8 @@ public class LanguageActivity extends BaseActivity {
                 ((ImageView) recyclerViewLanguage.getChildAt(i).findViewById(R.id.iv_select)).setImageResource(R.drawable.checkbox_choose_language_normal);
             }
             ((ImageView) view.findViewById(R.id.iv_select)).setImageResource(R.drawable.checkbox_choose_language_selected);
-            sharedPreferencesUtil.saveData(getString(R.string.language), languageList.get(position).getLanguageCode());
+
+            SPHelper.save(getString(R.string.language), languageList.get(position).getLanguageCode());
 
             changeAppLanguage();
 

@@ -9,9 +9,9 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import net.zhongbenshuo.wifiinterphone.R;
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
 import net.zhongbenshuo.wifiinterphone.utils.ApkUtils;
-import net.zhongbenshuo.wifiinterphone.utils.SharedPreferencesUtil;
 import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 
 /**
@@ -25,7 +25,6 @@ import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 public class SettingActivity extends BaseActivity {
 
     private Context mContext;
-    private SharedPreferencesUtil sharedPreferencesUtil;
     private TextView tvSendMethod;
 
     @Override
@@ -33,7 +32,6 @@ public class SettingActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         mContext = this;
-        sharedPreferencesUtil = SharedPreferencesUtil.getInstance();
         MyToolbar toolbar = findViewById(R.id.myToolbar);
         toolbar.initToolBar(this, toolbar, getString(R.string.settings), R.drawable.back_white, onClickListener);
         findViewById(R.id.ll_serverSettings).setOnClickListener(onClickListener);
@@ -50,7 +48,7 @@ public class SettingActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        switch ((int) sharedPreferencesUtil.getData("broadcast", 0)) {
+        switch (SPHelper.getInt("broadcast", 0)) {
             case 0:
                 tvSendMethod.setText(getString(R.string.send_wlan_unicast));
                 break;
@@ -110,7 +108,7 @@ public class SettingActivity extends BaseActivity {
         switch (buttonView.getId()) {
             case R.id.toggle_useSpeakers:
                 //是否使用扬声器播放
-                sharedPreferencesUtil.saveData(getString(R.string.userSpeakers), buttonView.isChecked());
+                SPHelper.save(getString(R.string.userSpeakers), buttonView.isChecked());
                 break;
             default:
                 break;

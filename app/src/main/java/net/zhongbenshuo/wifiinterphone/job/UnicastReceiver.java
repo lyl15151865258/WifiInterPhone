@@ -5,6 +5,7 @@ import android.os.Message;
 
 import net.zhongbenshuo.wifiinterphone.constant.Command;
 import net.zhongbenshuo.wifiinterphone.constant.Constants;
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.data.AudioData;
 import net.zhongbenshuo.wifiinterphone.data.MessageQueue;
 import net.zhongbenshuo.wifiinterphone.network.wlan.Unicast;
@@ -49,7 +50,9 @@ public class UnicastReceiver extends JobHandler {
                     datagramPacket.getLength() == Command.DISC_LEAVE.getBytes().length ||
                     datagramPacket.getLength() == Command.DISC_RESPONSE.getBytes().length) {
                 handleCommandData(datagramPacket);
+                SPHelper.save("CANT_SPEAK", false);
             } else {
+                SPHelper.save("CANT_SPEAK", true);
                 handleAudioData(datagramPacket);
             }
         }

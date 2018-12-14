@@ -8,8 +8,8 @@ import android.os.AsyncTask;
 import android.view.KeyEvent;
 
 import net.zhongbenshuo.wifiinterphone.R;
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
-import net.zhongbenshuo.wifiinterphone.utils.SharedPreferencesUtil;
 
 import java.lang.ref.WeakReference;
 
@@ -33,19 +33,37 @@ public class MediaButtonReceiver extends BroadcastReceiver {
 
             if (keyEvent.getKeyCode() == KeyEvent.KEYCODE_HEADSETHOOK && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
 
-                if ((boolean) SharedPreferencesUtil.getInstance().getData("KEY_STATUS_UP", true)) {
+                if (SPHelper.getBoolean("KEY_STATUS_UP", true)) {
                     // 之前是抬起的，直接发送按下广播、停止音乐、开启倒计时
                     LogUtils.d(TAG, "之前是抬起的，发送按下的广播");
-                    Intent intent1 = new Intent();
-                    intent1.setAction("KEY_DOWN");
-                    context.sendBroadcast(intent1);
-                    SharedPreferencesUtil.getInstance().saveData("KEY_STATUS_UP", false);
-                    if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                        mediaPlayer.stop();
-                        mediaPlayer.release();
-                        mediaPlayer = null;
+                    if (SPHelper.getBoolean("CANT_SPEAK", true)) {
+                        // 被标记为不能讲话
+                        LogUtils.d(TAG, "你现在不能讲话");
+                        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                            mediaPlayer.stop();
+                            mediaPlayer.release();
+                            mediaPlayer = null;
+                        }
+                        try {
+                            mediaPlayer = MediaPlayer.create(mContext, R.raw.dududu);
+                            mediaPlayer.setLooping(false);
+                            mediaPlayer.start();
+                            mediaPlayer.setVolume(0.1f, 0.1f);
+                        } catch (IllegalStateException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        Intent intent1 = new Intent();
+                        intent1.setAction("KEY_DOWN");
+                        context.sendBroadcast(intent1);
+                        SPHelper.save("KEY_STATUS_UP", false);
+                        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                            mediaPlayer.stop();
+                            mediaPlayer.release();
+                            mediaPlayer = null;
+                        }
+                        startTimeDown();
                     }
-                    startTimeDown();
                 } else {
                     // 之前是按下的
                     if (addTime) {
@@ -63,7 +81,7 @@ public class MediaButtonReceiver extends BroadcastReceiver {
                         Intent intent1 = new Intent();
                         intent1.setAction("KEY_UP");
                         context.sendBroadcast(intent1);
-                        SharedPreferencesUtil.getInstance().saveData("KEY_STATUS_UP", true);
+                        SPHelper.save("KEY_STATUS_UP", true);
                         if (syncTimeTask != null) {
                             syncTimeTask.cancel(true);
                             LogUtils.d(TAG, "取消syncTimeTask");
@@ -142,7 +160,7 @@ public class MediaButtonReceiver extends BroadcastReceiver {
                     Intent intent1 = new Intent();
                     intent1.setAction("KEY_UP");
                     mediaButtonReceiver.mContext.sendBroadcast(intent1);
-                    SharedPreferencesUtil.getInstance().saveData("KEY_STATUS_UP", true);
+                    SPHelper.save("KEY_STATUS_UP", true);
                     if (mediaPlayer != null && mediaPlayer.isPlaying()) {
                         mediaPlayer.stop();
                         mediaPlayer.release();

@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.LocaleList;
 
 import net.zhongbenshuo.wifiinterphone.R;
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 
 import java.util.Locale;
 
@@ -22,7 +23,7 @@ import java.util.Locale;
 public class LanguageUtil {
 
     public static String getLanguageLocal(Context context) {
-        return (String) SharedPreferencesUtil.getInstance().getData(context.getString(R.string.language), "");
+        return SPHelper.getString(context.getString(R.string.language), "");
     }
 
     public static Context attachBaseContext(Context context) {

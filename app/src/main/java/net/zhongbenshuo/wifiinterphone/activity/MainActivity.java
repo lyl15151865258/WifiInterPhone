@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -26,6 +27,7 @@ import android.widget.TextView;
 import net.zhongbenshuo.wifiinterphone.broadcast.MediaButtonReceiver;
 import net.zhongbenshuo.wifiinterphone.constant.Permission;
 import net.zhongbenshuo.wifiinterphone.R;
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.fragment.ContactsFragment;
 import net.zhongbenshuo.wifiinterphone.fragment.MalfunctionFragment;
 import net.zhongbenshuo.wifiinterphone.service.IIntercomService;
@@ -33,7 +35,6 @@ import net.zhongbenshuo.wifiinterphone.service.IntercomService;
 import net.zhongbenshuo.wifiinterphone.adapter.SelectModuleAdapter;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
-import net.zhongbenshuo.wifiinterphone.utils.SharedPreferencesUtil;
 import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 import net.zhongbenshuo.wifiinterphone.widget.NoScrollViewPager;
 import net.zhongbenshuo.wifiinterphone.widget.dialog.CommonWarningDialog;
@@ -61,6 +62,7 @@ public class MainActivity extends BaseActivity {
     private IIntercomService intercomService;
     private static final int REQUEST_PERMISSION = 1;
 
+    private MediaPlayer mediaPlayer;
     private AudioManager mAudioManager;
     private ComponentName mComponentName;
 
@@ -88,7 +90,7 @@ public class MainActivity extends BaseActivity {
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mComponentName = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
         // 初始化耳机按键标记
-        SharedPreferencesUtil.getInstance().saveData("KEY_STATUS_UP", true);
+        SPHelper.save("KEY_STATUS_UP", true);
     }
 
     //焦点问题
@@ -284,7 +286,25 @@ public class MainActivity extends BaseActivity {
                 vibrator.vibrate(50);
                 if (intercomService != null) {
                     try {
-                        intercomService.startRecord();
+                        if (SPHelper.getBoolean("CANT_SPEAK", true)) {
+                            // 被标记为不能讲话
+                            LogUtils.d(TAG, "你现在不能讲话");
+                            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                                mediaPlayer.stop();
+                                mediaPlayer.release();
+                                mediaPlayer = null;
+                            }
+                            try {
+                                mediaPlayer = MediaPlayer.create(mContext, R.raw.dududu);
+                                mediaPlayer.setLooping(false);
+                                mediaPlayer.start();
+                                mediaPlayer.setVolume(0.1f, 0.1f);
+                            } catch (IllegalStateException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            intercomService.startRecord();
+                        }
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -364,6 +384,10 @@ public class MainActivity extends BaseActivity {
     protected void onDestroy() {
         super.onDestroy();
         mAudioManager.unregisterMediaButtonEventReceiver(mComponentName);
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+        }
     }
 
 }
