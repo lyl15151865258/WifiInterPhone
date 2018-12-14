@@ -1,0 +1,74 @@
+package net.zhongbenshuo.wifiinterphone.activity;
+
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+
+import net.zhongbenshuo.wifiinterphone.R;
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
+import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
+import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
+
+/**
+ * 姓名设置页面
+ * Created at 2018-12-14 22:50
+ *
+ * @author LiYuliang
+ * @version 1.0
+ */
+
+public class SetNameActivity extends BaseActivity {
+
+    private EditText etNickName;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_set_nick_name);
+        MyToolbar toolbar = findViewById(R.id.set_nickName_toolbar);
+        toolbar.initToolBar(this, toolbar, getString(R.string.ModifyName), R.drawable.back_white, onClickListener);
+        Button btnModify = findViewById(R.id.btn_modify);
+        btnModify.setOnClickListener(onClickListener);
+        etNickName = findViewById(R.id.et_nickName);
+        etNickName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                if (TextUtils.isEmpty(charSequence.toString())) {
+                    btnModify.setEnabled(false);
+                } else {
+                    btnModify.setEnabled(true);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+        etNickName.setText(SPHelper.getString("UserName", ""));
+    }
+
+    private View.OnClickListener onClickListener = (v) -> {
+        switch (v.getId()) {
+            case R.id.iv_left:
+                ActivityController.finishActivity(this);
+                break;
+            case R.id.btn_modify:
+                SPHelper.save("UserName", etNickName.getText().toString());
+                ActivityController.finishActivity(this);
+                break;
+            default:
+                break;
+        }
+    };
+
+}
