@@ -33,6 +33,7 @@ import net.zhongbenshuo.wifiinterphone.service.IntercomService;
 import net.zhongbenshuo.wifiinterphone.adapter.SelectModuleAdapter;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
+import net.zhongbenshuo.wifiinterphone.utils.SharedPreferencesUtil;
 import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 import net.zhongbenshuo.wifiinterphone.widget.NoScrollViewPager;
 import net.zhongbenshuo.wifiinterphone.widget.dialog.CommonWarningDialog;
@@ -86,6 +87,8 @@ public class MainActivity extends BaseActivity {
 
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mComponentName = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
+        // 初始化耳机按键标记
+        SharedPreferencesUtil.getInstance().saveData("KEY_STATUS_UP", true);
     }
 
     //焦点问题
@@ -228,7 +231,7 @@ public class MainActivity extends BaseActivity {
         //当应用开始播放的时候首先需要请求焦点，调用该方法后，原先获取焦点的应用会释放焦点
         mAudioManager.requestAudioFocus(focusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
         //对媒体播放按钮进行封装
-        if(mComponentName==null){
+        if (mComponentName == null) {
             mComponentName = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
         }
         //注册封装的ComponentName

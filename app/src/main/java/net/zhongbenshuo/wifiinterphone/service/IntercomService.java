@@ -3,7 +3,9 @@ package net.zhongbenshuo.wifiinterphone.service;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
@@ -16,6 +18,7 @@ import android.util.Log;
 
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.activity.MainActivity;
+import net.zhongbenshuo.wifiinterphone.broadcast.BaseBroadcastReceiver;
 import net.zhongbenshuo.wifiinterphone.constant.Command;
 import net.zhongbenshuo.wifiinterphone.job.Decoder;
 import net.zhongbenshuo.wifiinterphone.job.Encoder;
@@ -26,6 +29,7 @@ import net.zhongbenshuo.wifiinterphone.job.SignInAndOutReq;
 import net.zhongbenshuo.wifiinterphone.job.Tracker;
 import net.zhongbenshuo.wifiinterphone.job.UnicastReceiver;
 import net.zhongbenshuo.wifiinterphone.job.UnicastSender;
+import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,6 +45,8 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class IntercomService extends Service {
+
+    private final static String TAG = "IntercomService";
 
     // 创建循环任务线程用于间隔的发送上线消息，获取局域网内其他的用户
     private ScheduledExecutorService discoverService = Executors.newScheduledThreadPool(1);
@@ -65,6 +71,8 @@ public class IntercomService extends Service {
     public static final int DISCOVERING_SEND = 0;
     public static final int DISCOVERING_RECEIVE = 1;
     public static final int DISCOVERING_LEAVE = 2;
+
+    private KeyEventBroadcastReceiver keyEventBroadcastReceiver;
 
     private MyHandler handler = new MyHandler(this);
 
@@ -174,6 +182,13 @@ public class IntercomService extends Service {
     public void onCreate() {
         super.onCreate();
         initData();
+
+        keyEventBroadcastReceiver = new KeyEventBroadcastReceiver();
+        IntentFilter filter1 = new IntentFilter();
+        filter1.addAction("KEY_DOWN");
+        filter1.addAction("KEY_UP");
+        registerReceiver(keyEventBroadcastReceiver, filter1);
+
         showNotification();
     }
 
@@ -242,11 +257,37 @@ public class IntercomService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
+    // 按键事件广播
+    private class KeyEventBroadcastReceiver extends BaseBroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            super.onReceive(context, intent);
+            if (("KEY_DOWN").equals(intent.getAction())) {
+                LogUtils.d(TAG, "收到KEY_DOWN广播");
+                try {
+                    mBinder.startRecord();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            } else if (("KEY_UP").equals(intent.getAction())) {
+                LogUtils.d(TAG, "收到KEY_UP广播");
+                try {
+                    mBinder.stopRecord();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
         // 释放资源
         free();
+        if (keyEventBroadcastReceiver != null) {
+            unregisterReceiver(keyEventBroadcastReceiver);
+        }
         // 停止前台Service
         stopForeground(true);
         stopSelf();
