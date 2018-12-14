@@ -95,8 +95,11 @@
             android:persistent="true"
             android:process=":intercom" />
 
-        <receiver android:name=".broadcast.MediaButtonReceiver" >
-            <intent-filter android:priority="2147483647" >
+        <receiver
+            android:name=".broadcast.MediaButtonReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter android:priority="2147483647">
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
         </receiver>

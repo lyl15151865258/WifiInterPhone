@@ -4,9 +4,9 @@ import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -17,7 +17,6 @@ import android.support.v4.view.ViewPager;
 import android.os.Bundle;
 import android.support.v7.content.res.AppCompatResources;
 import android.text.TextPaint;
-import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -61,7 +60,8 @@ public class MainActivity extends BaseActivity {
     private IIntercomService intercomService;
     private static final int REQUEST_PERMISSION = 1;
 
-    private MediaButtonReceiver mediaButtonReceiver;
+    private AudioManager mAudioManager;
+    private ComponentName mComponentName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,8 +84,29 @@ public class MainActivity extends BaseActivity {
             startService(intent);
         }
 
-        mediaButtonReceiver = new MediaButtonReceiver(this);
+        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        mComponentName = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
     }
+
+    //焦点问题
+    private AudioManager.OnAudioFocusChangeListener focusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            switch (focusChange) {
+                case AudioManager.AUDIOFOCUS_LOSS:// 长时间失去
+                    mAudioManager.unregisterMediaButtonEventReceiver(mComponentName);
+                    mAudioManager.abandonAudioFocus(focusChangeListener);//放弃焦点监听
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:// 短时间失去
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:// 短时间失去，但可以共用
+                    break;
+                case AudioManager.AUDIOFOCUS_GAIN:// 获得音频焦点
+                    mAudioManager.registerMediaButtonEventReceiver(mComponentName);
+                    break;
+
+            }
+        }
+    };
 
     private void initView() {
         textViews = new ArrayList<>();
@@ -203,6 +224,19 @@ public class MainActivity extends BaseActivity {
             });
             commonWarningDialog.show();
         }
+
+        //当应用开始播放的时候首先需要请求焦点，调用该方法后，原先获取焦点的应用会释放焦点
+        mAudioManager.requestAudioFocus(focusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        //对媒体播放按钮进行封装
+        if(mComponentName==null){
+            mComponentName = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
+        }
+        //注册封装的ComponentName
+        mAudioManager.registerMediaButtonEventReceiver(mComponentName);
+
+//        if (AudioManager.AUDIOFOCUS_REQUEST_GRANTED == mAudioManager.requestAudioFocus(focusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)) {
+//            mAudioManager.registerMediaButtonEventReceiver(mComponentName);
+//        }
 
     }
 
@@ -326,10 +360,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mediaButtonReceiver.unregisterHeadsetReceiver();
-        if (mediaButtonReceiver != null) {
-            unregisterReceiver(mediaButtonReceiver);
-        }
+        mAudioManager.unregisterMediaButtonEventReceiver(mComponentName);
     }
 
 }
