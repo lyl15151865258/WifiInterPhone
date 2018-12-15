@@ -1,6 +1,5 @@
 package net.zhongbenshuo.wifiinterphone.activity;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -15,27 +14,27 @@ import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
 import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 
 /**
- * 姓名设置页面
- * Created at 2018-12-14 22:50
+ * 单次说话时间设置
+ * Created at 2018-12-15 15:05
  *
  * @author LiYuliang
  * @version 1.0
  */
 
-public class SetNameActivity extends BaseActivity {
+public class SetSpeakTimeActivity extends BaseActivity {
 
-    private EditText etNickName;
+    private EditText etSpeakTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_set_name);
+        setContentView(R.layout.activity_set_speak_time);
         MyToolbar toolbar = findViewById(R.id.myToolbar);
-        toolbar.initToolBar(this, toolbar, getString(R.string.ModifyName), R.drawable.back_white, onClickListener);
+        toolbar.initToolBar(this, toolbar, getString(R.string.SetSpeakTime), R.drawable.back_white, onClickListener);
         Button btnModify = findViewById(R.id.btn_modify);
         btnModify.setOnClickListener(onClickListener);
-        etNickName = findViewById(R.id.et_nickName);
-        etNickName.addTextChangedListener(new TextWatcher() {
+        etSpeakTime = findViewById(R.id.etSpeakTime);
+        etSpeakTime.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 
@@ -55,7 +54,7 @@ public class SetNameActivity extends BaseActivity {
 
             }
         });
-        etNickName.setText(SPHelper.getString("UserName", ""));
+        etSpeakTime.setText(String.valueOf(SPHelper.getInt("SpeakTime", 30)));
     }
 
     private View.OnClickListener onClickListener = (v) -> {
@@ -64,10 +63,7 @@ public class SetNameActivity extends BaseActivity {
                 ActivityController.finishActivity(this);
                 break;
             case R.id.btn_modify:
-                SPHelper.save("UserName", etNickName.getText().toString());
-                Intent intent = new Intent();
-                intent.setAction("CHANGE_NAME");
-                sendBroadcast(intent);
+                SPHelper.save("SpeakTime", Integer.valueOf(etSpeakTime.getText().toString()));
                 ActivityController.finishActivity(this);
                 break;
             default:

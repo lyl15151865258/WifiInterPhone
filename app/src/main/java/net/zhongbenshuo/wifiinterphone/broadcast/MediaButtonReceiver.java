@@ -18,7 +18,7 @@ public class MediaButtonReceiver extends BroadcastReceiver {
     private static final String TAG = "MediaButtonReceiver";
     private Context mContext;
     private static SyncTimeTask syncTimeTask;
-    private static final int leftSeconds = 15;
+    private static int leftSeconds;
     private static MediaPlayer mediaPlayer;
     private static boolean addTime = false;
     private static int leftTime;
@@ -26,6 +26,7 @@ public class MediaButtonReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         mContext = context;
+        leftSeconds = SPHelper.getInt("SpeakTime", 30);
         if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
             KeyEvent keyEvent = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 

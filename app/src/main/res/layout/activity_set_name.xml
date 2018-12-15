@@ -9,7 +9,7 @@
     android:orientation="vertical">
 
     <net.zhongbenshuo.wifiinterphone.widget.MyToolbar
-        android:id="@+id/set_nickName_toolbar"
+        android:id="@+id/myToolbar"
         android:layout_width="match_parent"
         android:layout_height="@dimen/dp_50"
         app:titleText="@string/app_name" />

@@ -21,6 +21,9 @@
     <string name="ModifyName">Modify Name</string>
     <string name="TypeInName">Input your name</string>
     <string name="ConfirmModification">Confirm</string>
+    <string name="SetSpeakTime">Single talk time</string>
+    <string name="TypeInTime">Input time</string>
+    <string name="ModifySpeakTime">Modified time</string>
     <string name="WifiSettings">Wifi Settings</string>
     <string name="LanguageSettings">Language Settings</string>
     <string name="SendMode">Sound transmission method</string>

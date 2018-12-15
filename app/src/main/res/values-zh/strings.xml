@@ -21,6 +21,9 @@
     <string name="ModifyName">修改姓名</string>
     <string name="TypeInName">请输入姓名</string>
     <string name="ConfirmModification">确认修改</string>
+    <string name="SetSpeakTime">单次说话时长</string>
+    <string name="TypeInTime">输入时间</string>
+    <string name="ModifySpeakTime">修改时长</string>
     <string name="WifiSettings">Wifi设置</string>
     <string name="LanguageSettings">语言设置</string>
     <string name="SendMode">声音传输方式</string>

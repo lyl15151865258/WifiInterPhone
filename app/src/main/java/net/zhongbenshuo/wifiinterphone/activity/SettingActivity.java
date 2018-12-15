@@ -25,7 +25,7 @@ import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 public class SettingActivity extends BaseActivity {
 
     private Context mContext;
-    private TextView tvSendMethod, tvSetName;
+    private TextView tvSendMethod, tvSetName,tvSetSpeakTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,11 +38,13 @@ public class SettingActivity extends BaseActivity {
         findViewById(R.id.ll_setName).setOnClickListener(onClickListener);
         findViewById(R.id.ll_wifiSettings).setOnClickListener(onClickListener);
         findViewById(R.id.ll_languageSettings).setOnClickListener(onClickListener);
+        findViewById(R.id.ll_setSpeakTime).setOnClickListener(onClickListener);
         findViewById(R.id.llSendMode).setOnClickListener(onClickListener);
         findViewById(R.id.btn_exit).setOnClickListener(onClickListener);
         ((ToggleButton) findViewById(R.id.toggle_useSpeakers)).setOnCheckedChangeListener(onCheckedChangeListener);
         ((TextView) findViewById(R.id.tvVersion)).setText(ApkUtils.getVersionName(mContext));
         tvSetName = findViewById(R.id.tvSetName);
+        tvSetSpeakTime = findViewById(R.id.tvSetSpeakTime);
         tvSendMethod = findViewById(R.id.tvSendMethod);
     }
 
@@ -64,6 +66,7 @@ public class SettingActivity extends BaseActivity {
                 break;
         }
         tvSetName.setText(SPHelper.getString("UserName", ""));
+        tvSetSpeakTime.setText(String.valueOf(SPHelper.getInt("SpeakTime", 30)));
     }
 
     private View.OnClickListener onClickListener = (v) -> {
@@ -87,6 +90,10 @@ public class SettingActivity extends BaseActivity {
             case R.id.ll_languageSettings:
                 // 语言设置
                 openActivity(LanguageActivity.class);
+                break;
+            case R.id.ll_setSpeakTime:
+                // 设置单次说话时长
+                openActivity(SetSpeakTimeActivity.class);
                 break;
             case R.id.llSendMode:
                 // 声音传输方式

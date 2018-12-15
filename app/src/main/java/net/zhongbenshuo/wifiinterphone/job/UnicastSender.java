@@ -12,6 +12,7 @@ import net.zhongbenshuo.wifiinterphone.data.AudioData;
 import net.zhongbenshuo.wifiinterphone.data.MessageQueue;
 import net.zhongbenshuo.wifiinterphone.network.wlan.Unicast;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
+import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -47,10 +48,13 @@ public class UnicastSender extends JobHandler {
             try {
                 LogUtils.d("UnicastSender", ipList.get(0));
                 for (int i = 0; i < ipList.size(); i++) {
-                    DatagramPacket datagramPacket = new DatagramPacket(
-                            audioData.getEncodedData(), audioData.getEncodedData().length,
-                            InetAddress.getByName(ipList.get(i)), Constants.UNICAST_PORT);
-                    Unicast.getUnicast().getUnicastDatagramSocket().send(datagramPacket);
+                    // 往除了本机IP以外的IP发送
+                    if (!ipList.get(i).equals(WifiUtil.getLocalIPAddress())) {
+                        DatagramPacket datagramPacket = new DatagramPacket(
+                                audioData.getEncodedData(), audioData.getEncodedData().length,
+                                InetAddress.getByName(ipList.get(i)), Constants.UNICAST_PORT);
+                        Unicast.getUnicast().getUnicastDatagramSocket().send(datagramPacket);
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();

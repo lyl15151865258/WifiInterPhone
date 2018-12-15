@@ -3,6 +3,7 @@ package net.zhongbenshuo.wifiinterphone.fragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,6 +23,7 @@ import com.bumptech.glide.Glide;
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.adapter.ContactsAdapter;
 import net.zhongbenshuo.wifiinterphone.bean.Contact;
+import net.zhongbenshuo.wifiinterphone.broadcast.BaseBroadcastReceiver;
 import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.service.IIntercomCallback;
 import net.zhongbenshuo.wifiinterphone.service.IIntercomService;
@@ -52,6 +54,7 @@ public class ContactsFragment extends BaseFragment {
     private ContactsAdapter contactsAdapter;
     private boolean sIsScrolling = false;
     private IIntercomService intercomService;
+    private ChangeNameReceiver changeNameReceiver;
 
     private List<Contact> contactList;
     private Handler handler = new DisplayHandler(this);
@@ -69,7 +72,7 @@ public class ContactsFragment extends BaseFragment {
         rvContacts.addItemDecoration(new RecyclerViewDivider(mContext, LinearLayoutManager.HORIZONTAL, 1, ContextCompat.getColor(mContext, R.color.gray_slight)));
 
         contactList = new ArrayList<>();
-        Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress(),SPHelper.getString("UserName", ""));
+        Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress(), SPHelper.getString("UserName", ""));
         contactList.add(contact);
 
         contactsAdapter = new ContactsAdapter(mContext, contactList);
@@ -79,6 +82,11 @@ public class ContactsFragment extends BaseFragment {
 
         view.findViewById(R.id.btnSelectAll).setOnClickListener(onClickListener);
         view.findViewById(R.id.btnUnSelectAll).setOnClickListener(onClickListener);
+
+        changeNameReceiver = new ChangeNameReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("CHANGE_NAME");
+        mContext.registerReceiver(changeNameReceiver, filter);
 
         return view;
     }
@@ -260,7 +268,20 @@ public class ContactsFragment extends BaseFragment {
      */
     public void foundNewUser(String ipAddress, String name) {
         Contact contact = new Contact(ipAddress, name);
-        if (!contactList.contains(contact)) {
+        if (contactList.contains(contact)) {
+            // 包含该IP
+            for (int i = 0; i < contactList.size(); i++) {
+                if (contactList.get(i).getIp().equals(contact.getIp())) {
+                    // 如果姓名不相同，则更新并刷新列表
+                    if (!contactList.get(i).getUserName().equals(contact.getUserName())) {
+                        contactList.get(i).setUserName(contact.getUserName());
+                        contactsAdapter.notifyItemChanged(i);
+                    }
+                    break;
+                }
+            }
+        } else {
+            // 不包含该IP
             addNewUser(contact);
         }
     }
@@ -306,6 +327,22 @@ public class ContactsFragment extends BaseFragment {
         sendChangeIpBroadcast();
     }
 
+    // 修改姓名收到的广播
+    public class ChangeNameReceiver extends BaseBroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("CHANGE_NAME".equals(intent.getAction())) {
+                for (int i = 0; i < contactList.size(); i++) {
+                    if (contactList.get(i).getIp().equals("/" + WifiUtil.getLocalIPAddress())) {
+                        contactList.get(i).setUserName(SPHelper.getString("UserName", ""));
+                        contactsAdapter.notifyItemChanged(i);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -316,6 +353,9 @@ public class ContactsFragment extends BaseFragment {
                 e.printStackTrace();
             }
             mContext.unbindService(serviceConnection);
+        }
+        if (changeNameReceiver != null) {
+            mContext.unregisterReceiver(changeNameReceiver);
         }
     }
 

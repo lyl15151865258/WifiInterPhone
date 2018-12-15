@@ -21,6 +21,9 @@
     <string name="ModifyName">名前を変更する</string>
     <string name="TypeInName">名前を入力してください</string>
     <string name="ConfirmModification">修正を確認する</string>
+    <string name="SetSpeakTime">シングルトーク時間</string>
+    <string name="TypeInTime">入力時間</string>
+    <string name="ModifySpeakTime">変更時刻</string>
     <string name="WifiSettings">Wi-Fi設定</string>
     <string name="LanguageSettings">言語設定</string>
     <string name="SendMode">音声伝送方式</string>

@@ -103,6 +103,7 @@ public class ActivityController {
         }
         activities.removeAll(delList);
         android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(0);
     }
 
     public Activity getCurrentActivity() {

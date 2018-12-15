@@ -61,7 +61,7 @@ public class Contact implements Serializable {
         } else {
             try {
                 Contact that = (Contact) o;
-                // 设备Mac地址一致就认为是同一个设备
+                // IP地址匹配就认为是同一个设备
                 return ip.equals(that.ip);
             } catch (Exception e) {
                 e.printStackTrace();

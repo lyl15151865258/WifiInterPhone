@@ -51,7 +51,7 @@ public class IntercomService extends Service {
     private final static String TAG = "IntercomService";
 
     // 创建循环任务线程用于间隔的发送上线消息，获取局域网内其他的用户
-    private ScheduledExecutorService discoverService = Executors.newScheduledThreadPool(1);
+    private ScheduledExecutorService discoverService;
     // 创建8个线程的固定大小线程池，分别执行DiscoverServer，以及输入、输出音频
     private ExecutorService threadPool = Executors.newCachedThreadPool();
 
@@ -75,6 +75,7 @@ public class IntercomService extends Service {
     public static final int DISCOVERING_LEAVE = 2;
 
     private KeyEventBroadcastReceiver keyEventBroadcastReceiver;
+    private ChangeNameReceiver changeNameReceiver;
 
     private MyHandler handler = new MyHandler(this);
 
@@ -191,7 +192,7 @@ public class IntercomService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        initData();
+        initThread();
 
         keyEventBroadcastReceiver = new KeyEventBroadcastReceiver();
         IntentFilter filter1 = new IntentFilter();
@@ -199,21 +200,41 @@ public class IntercomService extends Service {
         filter1.addAction("KEY_UP");
         registerReceiver(keyEventBroadcastReceiver, filter1);
 
+        changeNameReceiver = new ChangeNameReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("CHANGE_NAME");
+        registerReceiver(changeNameReceiver, filter);
+
         showNotification();
     }
 
     /**
-     * 发送数据包，检测局域网内其他设备
+     * 开启多线程任务
      */
-    private void initData() {
-        // 初始化探测线程
-        signInAndOutReq = new SignInAndOutReq(handler);
-        String name = SPHelper.getString("UserName", "");
-        signInAndOutReq.setCommand(Command.DISC_REQUEST + "," + name);
-        // 启动探测局域网内其余用户的线程（每5秒扫描一次）
-        discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 5, TimeUnit.SECONDS);
+    private void initThread() {
+        // 开启发送自身信息的线程
+        initDiscoverThread();
         // 初始化JobHandler
         initJobHandler();
+    }
+
+    /**
+     * 开启发现线程
+     */
+    private void initDiscoverThread() {
+        if (signInAndOutReq != null) {
+            signInAndOutReq = null;
+        }
+        if (discoverService != null) {
+            discoverService.shutdown();
+            discoverService = null;
+        }
+        discoverService = Executors.newScheduledThreadPool(1);
+        // 初始化探测线程
+        signInAndOutReq = new SignInAndOutReq(handler);
+        signInAndOutReq.setCommand(Command.DISC_REQUEST + "," + SPHelper.getString("UserName", ""));
+        // 启动探测局域网内其余用户的线程（每5秒扫描一次）
+        discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 5, TimeUnit.SECONDS);
     }
 
     /**
@@ -294,6 +315,16 @@ public class IntercomService extends Service {
         }
     }
 
+    // 修改姓名收到的广播
+    public class ChangeNameReceiver extends BaseBroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("CHANGE_NAME".equals(intent.getAction())) {
+                initDiscoverThread();
+            }
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -301,6 +332,9 @@ public class IntercomService extends Service {
         free();
         if (keyEventBroadcastReceiver != null) {
             unregisterReceiver(keyEventBroadcastReceiver);
+        }
+        if (changeNameReceiver != null) {
+            unregisterReceiver(changeNameReceiver);
         }
         // 停止前台Service
         stopForeground(true);

@@ -94,6 +94,12 @@
             android:launchMode="singleTask"
             android:screenOrientation="portrait" />
 
+        <!-- 设置单次讲话时间页面 -->
+        <activity
+            android:name=".activity.SetSpeakTimeActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" />
+
         <!-- 局域网通信服务服务 -->
         <service
             android:name="net.zhongbenshuo.wifiinterphone.service.IntercomService"
