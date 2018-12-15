@@ -4,12 +4,17 @@ import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.os.RemoteException;
 import android.os.Vibrator;
 import android.support.v4.app.ActivityCompat;
@@ -24,6 +29,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import net.zhongbenshuo.wifiinterphone.broadcast.BaseBroadcastReceiver;
 import net.zhongbenshuo.wifiinterphone.broadcast.MediaButtonReceiver;
 import net.zhongbenshuo.wifiinterphone.constant.Permission;
 import net.zhongbenshuo.wifiinterphone.R;
@@ -62,9 +68,13 @@ public class MainActivity extends BaseActivity {
     private IIntercomService intercomService;
     private static final int REQUEST_PERMISSION = 1;
 
+    private CommonWarningDialog commonWarningDialog;
+
     private MediaPlayer mediaPlayer;
     private AudioManager mAudioManager;
     private ComponentName mComponentName;
+
+    private NetworkStatusReceiver networkStatusReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +99,14 @@ public class MainActivity extends BaseActivity {
 
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mComponentName = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
+
+        networkStatusReceiver = new NetworkStatusReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(networkStatusReceiver, intentFilter);
+
         // 初始化耳机按键标记
         SPHelper.save("KEY_STATUS_UP", true);
     }
@@ -212,22 +230,7 @@ public class MainActivity extends BaseActivity {
             bindService(intent, serviceConnection, BIND_AUTO_CREATE);
         } else {
             //提示是否连接WiFi
-            CommonWarningDialog commonWarningDialog = new CommonWarningDialog(mContext, getString(R.string.notification_connect_wifi));
-            commonWarningDialog.setCancelable(false);
-            commonWarningDialog.setOnDialogClickListener(new CommonWarningDialog.OnDialogClickListener() {
-                @Override
-                public void onOKClick() {
-                    //进入WiFi连接页面
-                    Intent wifiSettingsIntent = new Intent("android.settings.WIFI_SETTINGS");
-                    startActivity(wifiSettingsIntent);
-                }
-
-                @Override
-                public void onCancelClick() {
-                    ActivityController.finishActivity(MainActivity.this);
-                }
-            });
-            commonWarningDialog.show();
+            showConnectWifiDialog();
         }
 
         //当应用开始播放的时候首先需要请求焦点，调用该方法后，原先获取焦点的应用会释放焦点
@@ -243,6 +246,41 @@ public class MainActivity extends BaseActivity {
 //            mAudioManager.registerMediaButtonEventReceiver(mComponentName);
 //        }
 
+    }
+
+    /**
+     * 显示连接Wifi的弹窗
+     */
+    private void showConnectWifiDialog() {
+        if (commonWarningDialog == null) {
+            commonWarningDialog = new CommonWarningDialog(mContext, getString(R.string.notification_connect_wifi));
+            commonWarningDialog.setCancelable(false);
+            commonWarningDialog.setOnDialogClickListener(new CommonWarningDialog.OnDialogClickListener() {
+                @Override
+                public void onOKClick() {
+                    //进入WiFi连接页面
+                    Intent wifiSettingsIntent = new Intent("android.settings.WIFI_SETTINGS");
+                    startActivity(wifiSettingsIntent);
+                }
+
+                @Override
+                public void onCancelClick() {
+                    ActivityController.finishActivity(MainActivity.this);
+                }
+            });
+        }
+        if (!commonWarningDialog.isShowing()) {
+            commonWarningDialog.show();
+        }
+    }
+
+    /**
+     * 取消显示连接Wifi的弹窗
+     */
+    private void dismissWifiDialog() {
+        if (commonWarningDialog != null && commonWarningDialog.isShowing()) {
+            commonWarningDialog.dismiss();
+        }
     }
 
     /**
@@ -337,37 +375,92 @@ public class MainActivity extends BaseActivity {
         }
     }
 
-//    @Override
-//    public boolean onKeyDown(int keyCode, KeyEvent event) {
-//        if ((keyCode == KeyEvent.KEYCODE_F2 || keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
-//            tvMessage.setText(getString(R.string.releaseFinish));
-//            if (intercomService != null) {
-//                try {
-//                    intercomService.startRecord();
-//                } catch (RemoteException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            return true;
-//        }
-//        return super.onKeyDown(keyCode, event);
-//    }
-//
-//    @Override
-//    public boolean onKeyUp(int keyCode, KeyEvent event) {
-//        if ((keyCode == KeyEvent.KEYCODE_F2 || keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
-//            tvMessage.setText(getString(R.string.pressToSpeak));
-//            if (intercomService != null) {
-//                try {
-//                    intercomService.stopRecord();
-//                } catch (RemoteException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            return true;
-//        }
-//        return super.onKeyUp(keyCode, event);
-//    }
+    //网络状态广播
+    public class NetworkStatusReceiver extends BaseBroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // 监听wifi的打开与关闭，与wifi的连接无关
+            if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(intent.getAction())) {
+                int wifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, 0);
+                if (wifiState == WifiManager.WIFI_STATE_DISABLED) {
+                    //wifi关闭
+                    LogUtils.d(TAG, "wifi已关闭");
+                    // 清除TextView内容，弹出Dialog
+                    tvIp.setText("");
+                    tvMessage.setText("");
+                    tvSSID.setText("");
+                    showConnectWifiDialog();
+                } else if (wifiState == WifiManager.WIFI_STATE_ENABLED) {
+                    //wifi开启
+                    LogUtils.d(TAG, "wifi已开启");
+                } else if (wifiState == WifiManager.WIFI_STATE_ENABLING) {
+                    //wifi开启中
+                    LogUtils.d(TAG, "wifi开启中");
+                } else if (wifiState == WifiManager.WIFI_STATE_DISABLING) {
+                    //wifi关闭中
+                    LogUtils.d(TAG, "wifi关闭中");
+                }
+            }
+            // 监听wifi的连接状态即是否连上了一个有效无线路由
+            if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(intent.getAction())) {
+                Parcelable parcelableExtra = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+                if (parcelableExtra != null) {
+                    NetworkInfo networkInfo = (NetworkInfo) parcelableExtra;
+                    if (networkInfo.getState() == NetworkInfo.State.CONNECTED) {
+                        //已连接网络
+                        LogUtils.d(TAG, "wifi 已连接网络");
+                        if (networkInfo.isAvailable()) {//并且网络可用
+                            LogUtils.d(TAG, "wifi 已连接网络，并且可用");
+                        } else {//并且网络不可用
+                            LogUtils.d(TAG, "wifi 已连接网络，但不可用");
+                        }
+                        // 取消显示Dialog
+                        dismissWifiDialog();
+                        // TextView显示网络信息
+                        if (WifiUtil.WifiConnected(mContext)) {
+                            tvSSID.setText(WifiUtil.getSSID(mContext));
+                            tvIp.setText(WifiUtil.getLocalIPAddress());
+                        }
+                    } else {
+                        //网络未连接
+                        LogUtils.d(TAG, "wifi 未连接网络");
+                    }
+                } else {
+                    LogUtils.d(TAG, "wifi parcelableExtra为空");
+                }
+            }
+            // 监听网络连接，总网络判断，即包括wifi和移动网络的监听
+            if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
+                NetworkInfo networkInfo = intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
+                //连上的网络类型判断：wifi还是移动网络
+                if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                    LogUtils.d(TAG, "总网络 连接的是wifi网络");
+                } else if (networkInfo.getType() == ConnectivityManager.TYPE_MOBILE) {
+                    LogUtils.d(TAG, "总网络 连接的是移动网络");
+                }
+                //具体连接状态判断
+                checkNetworkStatus(networkInfo);
+            }
+        }
+
+        private void checkNetworkStatus(NetworkInfo networkInfo) {
+            if (networkInfo != null) {
+                LogUtils.d(TAG, "总网络 info非空");
+                if (networkInfo.getState() == NetworkInfo.State.CONNECTED) {//已连接网络
+                    LogUtils.d(TAG, "总网络 已连接网络");
+                    if (networkInfo.isAvailable()) {//并且网络可用
+                        LogUtils.d(TAG, "总网络 已连接网络，并且可用");
+                    } else {//并且网络不可用
+                        LogUtils.d(TAG, "总网络 已连接网络，但不可用");
+                    }
+                } else if (networkInfo.getState() == NetworkInfo.State.DISCONNECTED) {//网络未连接
+                    LogUtils.d(TAG, "总网络 未连接网络");
+                }
+            } else {
+                LogUtils.d(TAG, "总网络 info为空");
+            }
+        }
+    }
 
     @Override
     public void onBackPressed() {
@@ -387,6 +480,9 @@ public class MainActivity extends BaseActivity {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
             mediaPlayer.release();
+        }
+        if (networkStatusReceiver != null) {
+            mContext.unregisterReceiver(networkStatusReceiver);
         }
     }
 

@@ -108,6 +108,7 @@
             android:persistent="true"
             android:process=":intercom" />
 
+        <!-- 耳机媒体键按下的广播接收器 -->
         <receiver
             android:name=".broadcast.MediaButtonReceiver"
             android:enabled="true"
@@ -118,6 +119,7 @@
             </intent-filter>
         </receiver>
 
+        <!-- 用于结合SharedPreferences使用的跨进程数据共享 -->
         <provider
             android:name=".contentprovider.SPContentProvider"
             android:authorities="net.zhongbenshuo.wifiinterphone"

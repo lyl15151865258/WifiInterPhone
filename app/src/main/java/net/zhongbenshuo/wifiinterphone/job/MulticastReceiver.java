@@ -50,8 +50,8 @@ public class MulticastReceiver extends JobHandler {
             // 判断数据报文类型，并做相应处理
             String content = new String(datagramPacket.getData()).trim();
             if (content.startsWith(Command.DISC_REQUEST) || content.startsWith(Command.DISC_LEAVE) || content.startsWith(Command.DISC_RESPONSE)) {
-                handleCommandData(datagramPacket);
                 SPHelper.save("CANT_SPEAK", false);
+                handleCommandData(datagramPacket);
             } else {
                 SPHelper.save("CANT_SPEAK", true);
                 handleAudioData(datagramPacket);

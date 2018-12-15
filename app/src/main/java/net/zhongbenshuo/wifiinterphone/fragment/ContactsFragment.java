@@ -5,10 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.Parcelable;
 import android.os.RemoteException;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -55,6 +59,7 @@ public class ContactsFragment extends BaseFragment {
     private boolean sIsScrolling = false;
     private IIntercomService intercomService;
     private ChangeNameReceiver changeNameReceiver;
+    private NetworkStatusReceiver networkStatusReceiver;
 
     private List<Contact> contactList;
     private Handler handler = new DisplayHandler(this);
@@ -72,8 +77,10 @@ public class ContactsFragment extends BaseFragment {
         rvContacts.addItemDecoration(new RecyclerViewDivider(mContext, LinearLayoutManager.HORIZONTAL, 1, ContextCompat.getColor(mContext, R.color.gray_slight)));
 
         contactList = new ArrayList<>();
-        Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress(), SPHelper.getString("UserName", ""));
-        contactList.add(contact);
+        if (WifiUtil.WifiConnected(mContext)) {
+            Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress(), SPHelper.getString("UserName", ""));
+            contactList.add(contact);
+        }
 
         contactsAdapter = new ContactsAdapter(mContext, contactList);
         contactsAdapter.setOnItemClickListener(onItemClickListener);
@@ -87,6 +94,13 @@ public class ContactsFragment extends BaseFragment {
         IntentFilter filter = new IntentFilter();
         filter.addAction("CHANGE_NAME");
         mContext.registerReceiver(changeNameReceiver, filter);
+
+        networkStatusReceiver = new NetworkStatusReceiver();
+        IntentFilter filter2 = new IntentFilter();
+        filter2.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        filter2.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        filter2.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        mContext.registerReceiver(networkStatusReceiver, filter2);
 
         return view;
     }
@@ -343,6 +357,102 @@ public class ContactsFragment extends BaseFragment {
         }
     }
 
+    //网络状态广播
+    public class NetworkStatusReceiver extends BaseBroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // 监听wifi的打开与关闭，与wifi的连接无关
+            if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(intent.getAction())) {
+                int wifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, 0);
+                if (wifiState == WifiManager.WIFI_STATE_DISABLED) {
+                    //wifi关闭
+                    LogUtils.d(TAG, "wifi已关闭");
+                    // 标记耳机按键抬起，停止录音
+                    Intent intent1 = new Intent();
+                    intent1.setAction("KEY_UP");
+                    context.sendBroadcast(intent1);
+                    SPHelper.save("KEY_STATUS_UP", true);
+                    // 清空联系人列表
+                    contactList.clear();
+                    contactsAdapter.notifyDataSetChanged();
+                    sendChangeIpBroadcast();
+
+                } else if (wifiState == WifiManager.WIFI_STATE_ENABLED) {
+                    //wifi开启
+                    LogUtils.d(TAG, "wifi已开启");
+                } else if (wifiState == WifiManager.WIFI_STATE_ENABLING) {
+                    //wifi开启中
+                    LogUtils.d(TAG, "wifi开启中");
+                } else if (wifiState == WifiManager.WIFI_STATE_DISABLING) {
+                    //wifi关闭中
+                    LogUtils.d(TAG, "wifi关闭中");
+                }
+            }
+            // 监听wifi的连接状态即是否连上了一个有效无线路由
+            if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(intent.getAction())) {
+                Parcelable parcelableExtra = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+                if (parcelableExtra != null) {
+                    LogUtils.d(TAG, "wifi parcelableExtra不为空");
+                    NetworkInfo networkInfo = (NetworkInfo) parcelableExtra;
+                    if (networkInfo.getState() == NetworkInfo.State.CONNECTED) {
+                        //已连接网络
+                        LogUtils.d(TAG, "wifi 已连接网络");
+                        if (networkInfo.isAvailable()) {
+                            //并且网络可用
+                            LogUtils.d(TAG, "wifi 已连接网络，并且可用");
+                        } else {
+                            //并且网络不可用
+                            LogUtils.d(TAG, "wifi 已连接网络，但不可用");
+                        }
+
+                        if (WifiUtil.WifiConnected(mContext)) {
+                            Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress(), SPHelper.getString("UserName", ""));
+                            // 会多次进入这里，所以要判断列表是否已经存在了本机IP对象
+                            if (!contactList.contains(contact)) {
+                                contactList.add(0, contact);
+                            }
+                        }
+
+                    } else {//网络未连接
+                        LogUtils.d(TAG, "wifi 未连接网络");
+                    }
+                } else {
+                    LogUtils.d(TAG, "wifi parcelableExtra为空");
+                }
+            }
+            // 监听网络连接，总网络判断，即包括wifi和移动网络的监听
+            if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
+                NetworkInfo networkInfo = intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
+                //连上的网络类型判断：wifi还是移动网络
+                if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                    LogUtils.d(TAG, "总网络 连接的是wifi网络");
+                } else if (networkInfo.getType() == ConnectivityManager.TYPE_MOBILE) {
+                    LogUtils.d(TAG, "总网络 连接的是移动网络");
+                }
+                //具体连接状态判断
+                checkNetworkStatus(networkInfo);
+            }
+        }
+
+        private void checkNetworkStatus(NetworkInfo networkInfo) {
+            if (networkInfo != null) {
+                LogUtils.d(TAG, "总网络 info非空");
+                if (networkInfo.getState() == NetworkInfo.State.CONNECTED) {//已连接网络
+                    LogUtils.d(TAG, "总网络 已连接网络");
+                    if (networkInfo.isAvailable()) {//并且网络可用
+                        LogUtils.d(TAG, "总网络 已连接网络，并且可用");
+                    } else {//并且网络不可用
+                        LogUtils.d(TAG, "总网络 已连接网络，但不可用");
+                    }
+                } else if (networkInfo.getState() == NetworkInfo.State.DISCONNECTED) {//网络未连接
+                    LogUtils.d(TAG, "总网络 未连接网络");
+                }
+            } else {
+                LogUtils.d(TAG, "总网络 info为空");
+            }
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -356,6 +466,9 @@ public class ContactsFragment extends BaseFragment {
         }
         if (changeNameReceiver != null) {
             mContext.unregisterReceiver(changeNameReceiver);
+        }
+        if (networkStatusReceiver != null) {
+            mContext.unregisterReceiver(networkStatusReceiver);
         }
     }
 

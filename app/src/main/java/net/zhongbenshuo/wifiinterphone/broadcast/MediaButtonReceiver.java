@@ -13,6 +13,14 @@ import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 
 import java.lang.ref.WeakReference;
 
+/**
+ * 耳机媒体键广播
+ * Created at 2018-12-13 17:00
+ *
+ * @author LiYuliang
+ * @version 1.0
+ */
+
 public class MediaButtonReceiver extends BroadcastReceiver {
 
     private static final String TAG = "MediaButtonReceiver";
@@ -34,17 +42,19 @@ public class MediaButtonReceiver extends BroadcastReceiver {
 
             if (keyEvent.getKeyCode() == KeyEvent.KEYCODE_HEADSETHOOK && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
 
+                // 停止播放任何警报声
+                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
+                    mediaPlayer = null;
+                }
+
                 if (SPHelper.getBoolean("KEY_STATUS_UP", true)) {
                     // 之前是抬起的，直接发送按下广播、停止音乐、开启倒计时
                     LogUtils.d(TAG, "之前是抬起的，发送按下的广播");
                     if (SPHelper.getBoolean("CANT_SPEAK", true)) {
                         // 被标记为不能讲话
                         LogUtils.d(TAG, "你现在不能讲话");
-                        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                            mediaPlayer.stop();
-                            mediaPlayer.release();
-                            mediaPlayer = null;
-                        }
                         try {
                             mediaPlayer = MediaPlayer.create(mContext, R.raw.dududu);
                             mediaPlayer.setLooping(false);
@@ -58,23 +68,13 @@ public class MediaButtonReceiver extends BroadcastReceiver {
                         intent1.setAction("KEY_DOWN");
                         context.sendBroadcast(intent1);
                         SPHelper.save("KEY_STATUS_UP", false);
-                        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                            mediaPlayer.stop();
-                            mediaPlayer.release();
-                            mediaPlayer = null;
-                        }
                         startTimeDown();
                     }
                 } else {
                     // 之前是按下的
                     if (addTime) {
-                        // 如果需要增加时间，直接充值倒计时时间
+                        // 如果需要增加时间，直接重置倒计时时间
                         LogUtils.d(TAG, "需要增加时间，恢复倒计时时间");
-                        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                            mediaPlayer.stop();
-                            mediaPlayer.release();
-                            mediaPlayer = null;
-                        }
                         leftTime = leftSeconds;
                     } else {
                         // 如果不需要增加时间，则发送抬起的广播
