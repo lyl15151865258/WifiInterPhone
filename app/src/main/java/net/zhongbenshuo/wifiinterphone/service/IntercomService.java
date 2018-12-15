@@ -3,11 +3,16 @@ package net.zhongbenshuo.wifiinterphone.service;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothHeadset;
+import android.bluetooth.BluetoothProfile;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -109,6 +114,28 @@ public class IntercomService extends Service {
         }
     }
 
+    private BroadcastReceiver headsetPlugReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED.equals(action)) {
+                BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+                if (BluetoothProfile.STATE_DISCONNECTED == adapter.getProfileConnectionState(BluetoothProfile.HEADSET)) {
+                    // 蓝牙耳机移除
+                    LogUtils.d(TAG, "蓝牙耳机移除");
+                }
+            } else if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(action)) {
+                // 有线耳机移除，标记耳机按键状态为抬起并发送广播，停止录音
+                Intent intent1 = new Intent();
+                intent1.setAction("KEY_UP");
+                context.sendBroadcast(intent1);
+                SPHelper.save("KEY_STATUS_UP", true);
+                LogUtils.d(TAG, "有线耳机移除");
+            }
+        }
+    };
+
     /**
      * 发现新的组播成员
      *
@@ -201,9 +228,14 @@ public class IntercomService extends Service {
         registerReceiver(keyEventBroadcastReceiver, filter1);
 
         changeNameReceiver = new ChangeNameReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("CHANGE_NAME");
-        registerReceiver(changeNameReceiver, filter);
+        IntentFilter filter2 = new IntentFilter();
+        filter2.addAction("CHANGE_NAME");
+        registerReceiver(changeNameReceiver, filter2);
+
+        IntentFilter filter3 = new IntentFilter();
+        filter3.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
+        filter3.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        registerReceiver(headsetPlugReceiver, filter3);
 
         showNotification();
     }
@@ -335,6 +367,9 @@ public class IntercomService extends Service {
         }
         if (changeNameReceiver != null) {
             unregisterReceiver(changeNameReceiver);
+        }
+        if (headsetPlugReceiver != null) {
+            unregisterReceiver(headsetPlugReceiver);
         }
         // 停止前台Service
         stopForeground(true);
