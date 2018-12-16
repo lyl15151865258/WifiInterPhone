@@ -2,7 +2,6 @@ package net.zhongbenshuo.wifiinterphone.activity;
 
 import android.content.Context;
 import android.content.Intent;
-import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.CompoundButton;
@@ -42,7 +41,8 @@ public class SettingActivity extends BaseActivity {
         findViewById(R.id.ll_setSpeakTime).setOnClickListener(onClickListener);
         findViewById(R.id.llSendMode).setOnClickListener(onClickListener);
         findViewById(R.id.btn_exit).setOnClickListener(onClickListener);
-        ((ToggleButton) findViewById(R.id.toggle_useSpeakers)).setOnCheckedChangeListener(onCheckedChangeListener);
+        ToggleButton toggleUseSpeakers = findViewById(R.id.toggle_useSpeakers);
+        toggleUseSpeakers.setOnCheckedChangeListener(onCheckedChangeListener);
         ((TextView) findViewById(R.id.tvVersion)).setText(ApkUtils.getVersionName(mContext));
         tvSetName = findViewById(R.id.tvSetName);
         tvSetSpeakTime = findViewById(R.id.tvSetSpeakTime);
@@ -113,17 +113,7 @@ public class SettingActivity extends BaseActivity {
         switch (buttonView.getId()) {
             case R.id.toggle_useSpeakers:
                 //是否使用扬声器播放
-                SPHelper.save(getString(R.string.UseSpeaker), buttonView.isChecked());
-                AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-                if (isChecked) {
-                    audioManager.setMicrophoneMute(false);
-                    audioManager.setSpeakerphoneOn(true);
-                    audioManager.setMode(AudioManager.STREAM_MUSIC);
-                } else {
-                    audioManager.setMicrophoneMute(true);
-                    audioManager.setSpeakerphoneOn(false);
-                    audioManager.setMode(AudioManager.STREAM_MUSIC);
-                }
+
                 break;
             default:
                 break;

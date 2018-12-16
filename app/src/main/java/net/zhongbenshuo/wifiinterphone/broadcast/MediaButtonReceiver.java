@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.view.KeyEvent;
 
 import net.zhongbenshuo.wifiinterphone.R;
+import net.zhongbenshuo.wifiinterphone.WifiInterPhoneApplication;
 import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 
@@ -149,7 +150,7 @@ public class MediaButtonReceiver extends BroadcastReceiver {
                 LogUtils.d(TAG, "leftTime：" + leftTime + "，addTime：" + addTime);
                 if (leftTime == 6) {
                     try {
-                        mediaPlayer = MediaPlayer.create(mediaButtonReceiver.mContext, R.raw.dididi);
+                        mediaPlayer = MediaPlayer.create(WifiInterPhoneApplication.getInstance(), R.raw.dididi);
                         mediaPlayer.setLooping(false);
                         mediaPlayer.start();
                         mediaPlayer.setVolume(0.1f, 0.1f);

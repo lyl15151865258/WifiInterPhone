@@ -108,6 +108,12 @@
             android:persistent="true"
             android:process=":intercom" />
 
+        <!-- 局域网通信服务服务 -->
+        <service
+            android:name="net.zhongbenshuo.wifiinterphone.service.WebSocketService"
+            android:enabled="true"
+            android:persistent="true" />
+
         <!-- 耳机媒体键按下的广播接收器 -->
         <receiver
             android:name=".broadcast.MediaButtonReceiver"

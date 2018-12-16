@@ -1,7 +1,11 @@
 package net.zhongbenshuo.wifiinterphone.fragment;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -14,12 +18,16 @@ import com.bumptech.glide.Glide;
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.adapter.MalfunctionAdapter;
 import net.zhongbenshuo.wifiinterphone.bean.Malfunction;
+import net.zhongbenshuo.wifiinterphone.service.WebSocketService;
+import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 import net.zhongbenshuo.wifiinterphone.widget.xrecyclerview.ProgressStyle;
 import net.zhongbenshuo.wifiinterphone.widget.xrecyclerview.XRecyclerView;
 import net.zhongbenshuo.wifiinterphone.widget.xrecyclerview.XRecyclerViewDivider;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.content.Context.BIND_AUTO_CREATE;
 
 /**
  * 故障列表Fragment
@@ -31,11 +39,13 @@ import java.util.List;
 
 public class MalfunctionFragment extends BaseFragment {
 
+    private final static String TAG = "MalfunctionFragment";
     private Context mContext;
     private XRecyclerView rvMalfunction;
     private List<Malfunction> malfunctionList;
     private MalfunctionAdapter malfunctionAdapter;
     private boolean sIsScrolling = false;
+    private WebSocketService webSocketService;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -98,13 +108,36 @@ public class MalfunctionFragment extends BaseFragment {
         rvMalfunction.setAdapter(malfunctionAdapter);
         rvMalfunction.addOnScrollListener(onScrollListener);
 
+        Intent intent = new Intent(mContext, WebSocketService.class);
+        intent.putExtra("ServerHost", "192.168.1.126");
+        intent.putExtra("WebSocketPort", "50100");
+        mContext.startService(intent);
+
         return view;
     }
 
     @Override
     public void lazyLoad() {
-
+        Intent intent = new Intent(mContext, WebSocketService.class);
+        mContext.bindService(intent, serviceConnection, BIND_AUTO_CREATE);
     }
+
+    /**
+     * onServiceConnected和onServiceDisconnected运行在UI线程中
+     */
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            WebSocketService.WebSocketServiceBinder binder = (WebSocketService.WebSocketServiceBinder) service;
+            webSocketService = binder.getService();
+            LogUtils.d(TAG, "绑定Service成功");
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            webSocketService = null;
+        }
+    };
 
     private MalfunctionAdapter.OnItemClickListener onItemClickListener = (position) -> {
 
