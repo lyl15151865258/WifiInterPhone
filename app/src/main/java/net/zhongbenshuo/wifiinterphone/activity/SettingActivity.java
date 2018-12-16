@@ -2,6 +2,7 @@ package net.zhongbenshuo.wifiinterphone.activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.CompoundButton;
@@ -25,7 +26,7 @@ import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 public class SettingActivity extends BaseActivity {
 
     private Context mContext;
-    private TextView tvSendMethod, tvSetName,tvSetSpeakTime;
+    private TextView tvSendMethod, tvSetName, tvSetSpeakTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,7 +113,17 @@ public class SettingActivity extends BaseActivity {
         switch (buttonView.getId()) {
             case R.id.toggle_useSpeakers:
                 //是否使用扬声器播放
-                SPHelper.save(getString(R.string.userSpeakers), buttonView.isChecked());
+                SPHelper.save(getString(R.string.UseSpeaker), buttonView.isChecked());
+                AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                if (isChecked) {
+                    audioManager.setMicrophoneMute(false);
+                    audioManager.setSpeakerphoneOn(true);
+                    audioManager.setMode(AudioManager.STREAM_MUSIC);
+                } else {
+                    audioManager.setMicrophoneMute(true);
+                    audioManager.setSpeakerphoneOn(false);
+                    audioManager.setMode(AudioManager.STREAM_MUSIC);
+                }
                 break;
             default:
                 break;

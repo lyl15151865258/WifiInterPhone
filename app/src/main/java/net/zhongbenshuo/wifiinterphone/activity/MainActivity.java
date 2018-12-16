@@ -98,6 +98,15 @@ public class MainActivity extends BaseActivity {
         }
 
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (SPHelper.getBoolean(getString(R.string.UseSpeaker), false)) {
+            mAudioManager.setMicrophoneMute(false);
+            mAudioManager.setSpeakerphoneOn(true);
+            mAudioManager.setMode(AudioManager.STREAM_MUSIC);
+        } else {
+            mAudioManager.setMicrophoneMute(true);
+            mAudioManager.setSpeakerphoneOn(false);
+            mAudioManager.setMode(AudioManager.STREAM_MUSIC);
+        }
         mComponentName = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
 
         networkStatusReceiver = new NetworkStatusReceiver();
