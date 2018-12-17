@@ -264,7 +264,7 @@ public class IntercomService extends Service {
         discoverService = Executors.newScheduledThreadPool(1);
         // 初始化探测线程
         signInAndOutReq = new SignInAndOutReq(handler);
-        signInAndOutReq.setCommand(Command.DISC_REQUEST + "," + SPHelper.getString("UserName", ""));
+        signInAndOutReq.setCommand(Command.DISC_REQUEST + "," + SPHelper.getString("UserName", "Not Defined"));
         // 启动探测局域网内其余用户的线程（每5秒扫描一次）
         discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 5, TimeUnit.SECONDS);
     }

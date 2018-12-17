@@ -66,7 +66,7 @@ public class SettingActivity extends BaseActivity {
                 tvSendMethod.setText("");
                 break;
         }
-        tvSetName.setText(SPHelper.getString("UserName", ""));
+        tvSetName.setText(SPHelper.getString("UserName", "Not Defined"));
         tvSetSpeakTime.setText(String.valueOf(SPHelper.getInt("SpeakTime", 30)));
     }
 

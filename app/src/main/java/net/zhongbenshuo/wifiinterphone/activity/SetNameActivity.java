@@ -55,7 +55,7 @@ public class SetNameActivity extends BaseActivity {
 
             }
         });
-        etNickName.setText(SPHelper.getString("UserName", ""));
+        etNickName.setText(SPHelper.getString("UserName", "Not Defined"));
     }
 
     private View.OnClickListener onClickListener = (v) -> {

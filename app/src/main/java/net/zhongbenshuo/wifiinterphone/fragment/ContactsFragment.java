@@ -78,7 +78,7 @@ public class ContactsFragment extends BaseFragment {
 
         contactList = new ArrayList<>();
         if (WifiUtil.WifiConnected(mContext)) {
-            Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress(), SPHelper.getString("UserName", ""));
+            Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress(), SPHelper.getString("UserName", "Not Defined"));
             contactList.add(contact);
         }
 
@@ -348,7 +348,7 @@ public class ContactsFragment extends BaseFragment {
             if ("CHANGE_NAME".equals(intent.getAction())) {
                 for (int i = 0; i < contactList.size(); i++) {
                     if (contactList.get(i).getIp().equals("/" + WifiUtil.getLocalIPAddress())) {
-                        contactList.get(i).setUserName(SPHelper.getString("UserName", ""));
+                        contactList.get(i).setUserName(SPHelper.getString("UserName", "Not Defined"));
                         contactsAdapter.notifyItemChanged(i);
                         break;
                     }
@@ -406,7 +406,7 @@ public class ContactsFragment extends BaseFragment {
                         }
 
                         if (WifiUtil.WifiConnected(mContext)) {
-                            Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress(), SPHelper.getString("UserName", ""));
+                            Contact contact = new Contact("/" + WifiUtil.getLocalIPAddress(), SPHelper.getString("UserName", "Not Defined"));
                             // 会多次进入这里，所以要判断列表是否已经存在了本机IP对象
                             if (!contactList.contains(contact)) {
                                 contactList.add(0, contact);

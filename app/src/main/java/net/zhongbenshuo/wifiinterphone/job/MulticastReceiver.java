@@ -67,7 +67,7 @@ public class MulticastReceiver extends JobHandler {
         LogUtils.d("PackageContent", "MulticastReceiver:" + content);
         if (content.startsWith(Command.DISC_REQUEST) &&
                 !packet.getAddress().toString().equals("/" + WifiUtil.getLocalIPAddress())) {
-            byte[] feedback = (Command.DISC_RESPONSE + "," + SPHelper.getString("UserName", "")).getBytes();
+            byte[] feedback = (Command.DISC_RESPONSE + "," + SPHelper.getString("UserName", "Not Defined")).getBytes();
             // 发送数据
             DatagramPacket sendPacket = new DatagramPacket(feedback, feedback.length,
                     packet.getAddress(), Constants.MULTI_BROADCAST_PORT);
