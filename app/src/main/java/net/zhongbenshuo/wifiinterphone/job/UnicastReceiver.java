@@ -20,7 +20,7 @@ import java.net.DatagramPacket;
 import java.util.Arrays;
 
 /**
- * 单播发送线程
+ * 单播接收线程
  * Created at 2018/12/12 13:04
  *
  * @author LiYuliang
@@ -50,10 +50,8 @@ public class UnicastReceiver extends JobHandler {
             // 判断数据报文类型，并做相应处理
             String content = new String(datagramPacket.getData()).trim();
             if (content.startsWith(Command.DISC_REQUEST) || content.startsWith(Command.DISC_LEAVE) || content.startsWith(Command.DISC_RESPONSE)) {
-                SPHelper.save("CANT_SPEAK", false);
                 handleCommandData(datagramPacket);
             } else {
-                SPHelper.save("CANT_SPEAK", true);
                 handleAudioData(datagramPacket);
             }
         }
@@ -99,7 +97,7 @@ public class UnicastReceiver extends JobHandler {
      */
     private void handleAudioData(DatagramPacket packet) {
         byte[] encodedData = Arrays.copyOf(packet.getData(), packet.getLength());
-        AudioData audioData = new AudioData(encodedData);
+        AudioData audioData = new AudioData(encodedData, packet.getAddress().toString().replace("/", ""));
         MessageQueue.getInstance(MessageQueue.DECODER_DATA_QUEUE).put(audioData);
     }
 

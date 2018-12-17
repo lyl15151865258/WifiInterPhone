@@ -168,4 +168,9 @@ public class MalfunctionFragment extends BaseFragment {
         }
     };
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        webSocketService.closeWebSocket();
+    }
 }

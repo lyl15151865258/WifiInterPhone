@@ -7,6 +7,7 @@ import net.zhongbenshuo.wifiinterphone.constant.Constants;
 import net.zhongbenshuo.wifiinterphone.data.AudioData;
 import net.zhongbenshuo.wifiinterphone.data.MessageQueue;
 import net.zhongbenshuo.wifiinterphone.speex.Speex;
+import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 
 /**
  * 音频录制线程
@@ -55,7 +56,7 @@ public class Recorder extends JobHandler {
             // 实例化音频数据缓冲
             short[] rawData = new short[Speex.getInstance().getFrameSize()];
             audioRecord.read(rawData, 0, Speex.getInstance().getFrameSize());
-            AudioData audioData = new AudioData(rawData);
+            AudioData audioData = new AudioData(rawData, WifiUtil.getLocalIPAddress());
             MessageQueue.getInstance(MessageQueue.ENCODER_DATA_QUEUE).put(audioData);
         }
     }

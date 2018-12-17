@@ -324,25 +324,25 @@ public class MainActivity extends BaseActivity {
                 vibrator.vibrate(50);
                 if (intercomService != null) {
                     try {
-                        if (SPHelper.getBoolean("CANT_SPEAK", true)) {
-                            // 被标记为不能讲话
-                            LogUtils.d(TAG, "你现在不能讲话");
-                            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                                mediaPlayer.stop();
-                                mediaPlayer.release();
-                                mediaPlayer = null;
-                            }
-                            try {
-                                mediaPlayer = MediaPlayer.create(mContext, R.raw.dududu);
-                                mediaPlayer.setLooping(false);
-                                mediaPlayer.start();
-                                mediaPlayer.setVolume(0.1f, 0.1f);
-                            } catch (IllegalStateException e) {
-                                e.printStackTrace();
-                            }
-                        } else {
+//                        if (SPHelper.getBoolean("CANT_SPEAK", true)) {
+//                            // 被标记为不能讲话
+//                            LogUtils.d(TAG, "你现在不能讲话");
+//                            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+//                                mediaPlayer.stop();
+//                                mediaPlayer.release();
+//                                mediaPlayer = null;
+//                            }
+//                            try {
+//                                mediaPlayer = MediaPlayer.create(mContext, R.raw.dududu);
+//                                mediaPlayer.setLooping(false);
+//                                mediaPlayer.start();
+//                                mediaPlayer.setVolume(0.1f, 0.1f);
+//                            } catch (IllegalStateException e) {
+//                                e.printStackTrace();
+//                            }
+//                        } else {
                             intercomService.startRecord();
-                        }
+//                        }
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }

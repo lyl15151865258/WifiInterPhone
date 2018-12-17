@@ -53,24 +53,24 @@ public class MediaButtonReceiver extends BroadcastReceiver {
                 if (SPHelper.getBoolean("KEY_STATUS_UP", true)) {
                     // 之前是抬起的，直接发送按下广播、停止音乐、开启倒计时
                     LogUtils.d(TAG, "之前是抬起的，发送按下的广播");
-                    if (SPHelper.getBoolean("CANT_SPEAK", true)) {
-                        // 被标记为不能讲话
-                        LogUtils.d(TAG, "你现在不能讲话");
-                        try {
-                            mediaPlayer = MediaPlayer.create(mContext, R.raw.dududu);
-                            mediaPlayer.setLooping(false);
-                            mediaPlayer.start();
-                            mediaPlayer.setVolume(0.1f, 0.1f);
-                        } catch (IllegalStateException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
+//                    if (SPHelper.getBoolean("CANT_SPEAK", true)) {
+//                        // 被标记为不能讲话
+//                        LogUtils.d(TAG, "你现在不能讲话");
+//                        try {
+//                            mediaPlayer = MediaPlayer.create(mContext, R.raw.dududu);
+//                            mediaPlayer.setLooping(false);
+//                            mediaPlayer.start();
+//                            mediaPlayer.setVolume(0.1f, 0.1f);
+//                        } catch (IllegalStateException e) {
+//                            e.printStackTrace();
+//                        }
+//                    } else {
                         Intent intent1 = new Intent();
                         intent1.setAction("KEY_DOWN");
                         context.sendBroadcast(intent1);
                         SPHelper.save("KEY_STATUS_UP", false);
                         startTimeDown();
-                    }
+//                    }
                 } else {
                     // 之前是按下的
                     if (addTime) {
