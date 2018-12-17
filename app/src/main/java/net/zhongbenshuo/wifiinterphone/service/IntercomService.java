@@ -185,7 +185,6 @@ public class IntercomService extends Service {
         public void startRecord() throws RemoteException {
             if (!recorder.isRecording()) {
                 recorder.setRecording(true);
-                tracker.setPlaying(false);
                 threadPool.execute(recorder);
             }
         }
@@ -194,7 +193,6 @@ public class IntercomService extends Service {
         public void stopRecord() throws RemoteException {
             if (recorder.isRecording()) {
                 recorder.setRecording(false);
-                tracker.setPlaying(true);
             }
         }
 

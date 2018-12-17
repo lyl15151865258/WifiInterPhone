@@ -24,8 +24,6 @@ public class Tracker extends JobHandler {
 
     private static final String TAG = "Tracker";
     private List<MyAudioTrack> audioTrackList;
-    // 播放标志
-    private boolean isPlaying = true;
     private int outAudioBufferSize;
 
     public Tracker(Handler handler) {
@@ -38,41 +36,31 @@ public class Tracker extends JobHandler {
                 Constants.audioFormat);
     }
 
-    public boolean isPlaying() {
-        return isPlaying;
-    }
-
-    public void setPlaying(boolean playing) {
-        isPlaying = playing;
-    }
-
     @Override
     public void run() {
         AudioData audioData;
         while ((audioData = MessageQueue.getInstance(MessageQueue.TRACKER_DATA_QUEUE).take()) != null) {
-            if (isPlaying()) {
-                short[] bytesPkg = audioData.getRawData();
-                String ip = audioData.getIp();
-                if (audioTrackList.contains(new MyAudioTrack(ip))) {
-                    for (int i = 0; i < audioTrackList.size(); i++) {
-                        if (audioTrackList.get(i).getIp().equals(ip)) {
-                            LogUtils.d(TAG, "数据IP地址为：" + ip + ",已有的AudioTrack");
-                            try {
-                                audioTrackList.get(i).getAudioTrack().write(bytesPkg, 0, bytesPkg.length);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+            short[] bytesPkg = audioData.getRawData();
+            String ip = audioData.getIp();
+            if (audioTrackList.contains(new MyAudioTrack(ip))) {
+                for (int i = 0; i < audioTrackList.size(); i++) {
+                    if (audioTrackList.get(i).getIp().equals(ip)) {
+                        LogUtils.d(TAG, "数据IP地址为：" + ip + ",已有的AudioTrack");
+                        try {
+                            audioTrackList.get(i).getAudioTrack().write(bytesPkg, 0, bytesPkg.length);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
                     }
-                } else {
-                    MyAudioTrack myAudioTrack = new MyAudioTrack(getAudioTrack(), ip);
-                    audioTrackList.add(myAudioTrack);
-                    LogUtils.d(TAG, "数据IP地址为：" + ip + ",新的AudioTrack");
-                    try {
-                        myAudioTrack.getAudioTrack().write(bytesPkg, 0, bytesPkg.length);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                }
+            } else {
+                MyAudioTrack myAudioTrack = new MyAudioTrack(getAudioTrack(), ip);
+                audioTrackList.add(myAudioTrack);
+                LogUtils.d(TAG, "数据IP地址为：" + ip + ",新的AudioTrack");
+                try {
+                    myAudioTrack.getAudioTrack().write(bytesPkg, 0, bytesPkg.length);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
