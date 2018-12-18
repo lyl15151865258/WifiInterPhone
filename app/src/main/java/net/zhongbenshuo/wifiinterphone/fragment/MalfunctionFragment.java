@@ -3,6 +3,7 @@ package net.zhongbenshuo.wifiinterphone.fragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -17,7 +18,8 @@ import com.bumptech.glide.Glide;
 
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.adapter.MalfunctionAdapter;
-import net.zhongbenshuo.wifiinterphone.bean.Malfunction;
+import net.zhongbenshuo.wifiinterphone.bean.WebSocketData;
+import net.zhongbenshuo.wifiinterphone.broadcast.BaseBroadcastReceiver;
 import net.zhongbenshuo.wifiinterphone.service.WebSocketService;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 import net.zhongbenshuo.wifiinterphone.widget.xrecyclerview.ProgressStyle;
@@ -25,6 +27,7 @@ import net.zhongbenshuo.wifiinterphone.widget.xrecyclerview.XRecyclerView;
 import net.zhongbenshuo.wifiinterphone.widget.xrecyclerview.XRecyclerViewDivider;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static android.content.Context.BIND_AUTO_CREATE;
@@ -42,8 +45,9 @@ public class MalfunctionFragment extends BaseFragment {
     private final static String TAG = "MalfunctionFragment";
     private Context mContext;
     private XRecyclerView rvMalfunction;
-    private List<Malfunction> malfunctionList;
+    private List<WebSocketData> malfunctionList;
     private MalfunctionAdapter malfunctionAdapter;
+    private MyReceiver myReceiver;
     private boolean sIsScrolling = false;
     private WebSocketService webSocketService;
 
@@ -58,8 +62,7 @@ public class MalfunctionFragment extends BaseFragment {
         rvMalfunction.setRefreshProgressStyle(ProgressStyle.BallSpinFadeLoader);
         rvMalfunction.setArrowImageView(R.drawable.iconfont_downgrey);
         rvMalfunction.getDefaultRefreshHeaderView().setRefreshTimeVisible(false);
-        rvMalfunction.getDefaultFootView().setLoadingHint(getString(R.string.loading));
-        rvMalfunction.getDefaultFootView().setNoMoreHint(getString(R.string.NoMoreData));
+        rvMalfunction.setLoadingMoreEnabled(false);
         rvMalfunction.addItemDecoration(new XRecyclerViewDivider(mContext, LinearLayoutManager.HORIZONTAL, 1, ContextCompat.getColor(mContext, R.color.gray_slight)));
 
         rvMalfunction.setLoadingListener(new XRecyclerView.LoadingListener() {
@@ -80,29 +83,10 @@ public class MalfunctionFragment extends BaseFragment {
 
             @Override
             public void onLoadMore() {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
-                rvMalfunction.loadMoreComplete();
-                rvMalfunction.setNoMore(true);
+
             }
         });
         malfunctionList = new ArrayList<>();
-        for (int i = 0; i < 20; i++) {
-            Malfunction malfunction = new Malfunction();
-            malfunction.setMalfunctionType("电机故障" + i);
-            malfunction.setDescription("电机转速异常" + i);
-            malfunction.setMalfunctionTime("2018-11-28 11:02:30");
-            malfunction.setIconUrl("");
-            malfunctionList.add(malfunction);
-        }
         malfunctionAdapter = new MalfunctionAdapter(mContext, malfunctionList);
         malfunctionAdapter.setOnItemClickListener(onItemClickListener);
         rvMalfunction.setAdapter(malfunctionAdapter);
@@ -112,6 +96,11 @@ public class MalfunctionFragment extends BaseFragment {
         intent.putExtra("ServerHost", "192.168.1.126");
         intent.putExtra("WebSocketPort", "50100");
         mContext.startService(intent);
+
+        myReceiver = new MyReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("RECEIVE_MALFUNCTION");
+        mContext.registerReceiver(myReceiver, intentFilter);
 
         return view;
     }
@@ -168,9 +157,35 @@ public class MalfunctionFragment extends BaseFragment {
         }
     };
 
+    private class MyReceiver extends BaseBroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            super.onReceive(context, intent);
+            if ("RECEIVE_MALFUNCTION".equals(intent.getAction())) {
+                WebSocketData webSocketData = (WebSocketData) intent.getSerializableExtra("data");
+                if (webSocketData.isStatus()) {
+                    malfunctionList.add(0, webSocketData);
+                    malfunctionAdapter.notifyDataSetChanged();
+                } else {
+                    Iterator<WebSocketData> webSocketMsgIterator = malfunctionList.iterator();
+                    while (webSocketMsgIterator.hasNext()) {
+                        WebSocketData socketMsg = webSocketMsgIterator.next();
+                        if (socketMsg.getListNo() == webSocketData.getListNo()) {
+                            webSocketMsgIterator.remove();
+                        }
+                    }
+                    malfunctionAdapter.notifyDataSetChanged();
+                }
+            }
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
         webSocketService.closeWebSocket();
+        if (myReceiver != null) {
+            mContext.unregisterReceiver(myReceiver);
+        }
     }
 }

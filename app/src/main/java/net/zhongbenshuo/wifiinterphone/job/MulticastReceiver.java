@@ -97,8 +97,10 @@ public class MulticastReceiver extends JobHandler {
      */
     private void handleAudioData(DatagramPacket packet) {
         byte[] encodedData = Arrays.copyOf(packet.getData(), packet.getLength());
-        AudioData audioData = new AudioData(encodedData, packet.getAddress().toString().replace("/", ""));
-        MessageQueue.getInstance(MessageQueue.DECODER_DATA_QUEUE).put(audioData);
+        if (packet.getAddress() != null) {
+            AudioData audioData = new AudioData(encodedData, packet.getAddress().toString().replace("/", ""));
+            MessageQueue.getInstance(MessageQueue.DECODER_DATA_QUEUE).put(audioData);
+        }
     }
 
     /**

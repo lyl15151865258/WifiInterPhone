@@ -7,13 +7,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 
 import net.zhongbenshuo.wifiinterphone.R;
-import net.zhongbenshuo.wifiinterphone.bean.Malfunction;
+import net.zhongbenshuo.wifiinterphone.bean.WebSocketData;
 import net.zhongbenshuo.wifiinterphone.constant.NetWork;
 
 import java.util.List;
@@ -29,10 +30,10 @@ import java.util.List;
 public class MalfunctionAdapter extends RecyclerView.Adapter {
 
     private Context mContext;
-    private List<Malfunction> malfunctionList;
+    private List<WebSocketData> malfunctionList;
     private OnItemClickListener mListener;
 
-    public MalfunctionAdapter(Context mContext, List<Malfunction> malfunctionList) {
+    public MalfunctionAdapter(Context mContext, List<WebSocketData> malfunctionList) {
         this.mContext = mContext;
         this.malfunctionList = malfunctionList;
     }
@@ -46,12 +47,15 @@ public class MalfunctionAdapter extends RecyclerView.Adapter {
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
         NewsViewHolder holder = (NewsViewHolder) viewHolder;
-        Malfunction malfunction = malfunctionList.get(position);
-        holder.tvMalfunctionType.setText(malfunction.getMalfunctionType());
-        holder.tvDescription.setText(malfunction.getDescription());
-        holder.tvMalfunctionTime.setText(malfunction.getMalfunctionTime());
+        WebSocketData malfunction = malfunctionList.get(position);
+        holder.tvMalfunctionType.setText(malfunction.getText());
+        holder.tvMalfunctionTime.setText(malfunction.getTime());
 
-        String userIconUrl = malfunction.getIconUrl();
+        holder.tvMalfunctionType.setTextColor(malfunction.getForeColor());
+        holder.tvMalfunctionTime.setTextColor(malfunction.getForeColor());
+        holder.llRoot.setBackgroundColor(malfunction.getBackColor());
+
+        String userIconUrl = "";
         if (userIconUrl != null && !userIconUrl.isEmpty()) {
             String headIconUrl = "http://" + NetWork.SERVER_HOST_MAIN + ":" + NetWork.SERVER_PORT_MAIN + "/" + userIconUrl.replace("\\", "/");
             // 加载头像
@@ -75,14 +79,15 @@ public class MalfunctionAdapter extends RecyclerView.Adapter {
     }
 
     private class NewsViewHolder extends RecyclerView.ViewHolder {
-        private TextView tvMalfunctionType, tvDescription, tvMalfunctionTime;
+        private LinearLayout llRoot;
+        private TextView tvMalfunctionType, tvMalfunctionTime;
         private ImageView ivMalfunctionIcon;
 
         private NewsViewHolder(View itemView) {
             super(itemView);
+            llRoot = itemView.findViewById(R.id.llRoot);
             ivMalfunctionIcon = itemView.findViewById(R.id.ivMalfunctionIcon);
             tvMalfunctionType = itemView.findViewById(R.id.tvMalfunctionType);
-            tvDescription = itemView.findViewById(R.id.tvDescription);
             tvMalfunctionTime = itemView.findViewById(R.id.tvMalfunctionTime);
         }
     }

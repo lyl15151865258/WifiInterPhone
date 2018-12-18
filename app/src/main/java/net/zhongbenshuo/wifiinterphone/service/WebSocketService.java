@@ -6,7 +6,9 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 
-import net.zhongbenshuo.wifiinterphone.bean.WebsocketMsg;
+import net.zhongbenshuo.wifiinterphone.bean.Music;
+import net.zhongbenshuo.wifiinterphone.bean.MusicList;
+import net.zhongbenshuo.wifiinterphone.bean.WebSocketData;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
 import net.zhongbenshuo.wifiinterphone.utils.GsonUtils;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
@@ -62,6 +64,7 @@ public class WebSocketService extends Service {
     public void onCreate() {
         super.onCreate();
         webSocketServiceBinder = new WebSocketServiceBinder();
+        MusicPlay.with(WebSocketService.this).play();
     }
 
     @Override
@@ -108,21 +111,29 @@ public class WebSocketService extends Service {
                         //判断当前栈顶Activity，再判断数据类型，决定是否需要发送数据
                         AppCompatActivity currentActivity = (AppCompatActivity) ActivityController.getInstance().getCurrentActivity();
 
+                        WebSocketData webSocketData = GsonUtils.parseJSON(message, WebSocketData.class);
+                        Intent intent = new Intent();
+                        intent.setAction("RECEIVE_MALFUNCTION");
+                        intent.putExtra("data", webSocketData);
+                        WebSocketService.this.sendBroadcast(intent);
 
-                        WebsocketMsg websocketMsg = GsonUtils.parseJSON(message, WebsocketMsg.class);
-                        List<String> voiceList = websocketMsg.getTitle();
-                        String serverAddress = websocketMsg.getServerAddress();
+                        List<String> voiceList = webSocketData.getFileName();
+                        String serverAddress = webSocketData.getServerAddress();
                         if (voiceList != null && voiceList.size() > 0) {
-                            if (websocketMsg.getPlayCount() > 0) {
-                                for (int i = 0; i < websocketMsg.getPlayCount(); i++) {
-                                    LogUtils.d(TAG, "第" + i + "次循环");
-                                    List<String> newPathList = new ArrayList<>();
+                            if (webSocketData.isStatus()) {
+                                if (webSocketData.getPlayCount() > 0) {
+                                    List<Music> musicList = new ArrayList<>();
                                     for (String voiceName : voiceList) {
-                                        LogUtils.d(TAG, "音乐名称：" + voiceName);
-                                        newPathList.add("http://" + serverAddress + "/andonvoicedata/01_Japanese/" + voiceName);
+                                        String musicPath = "http://" + serverAddress + "/andonvoicedata/01_Japanese/" + voiceName;
+                                        LogUtils.d(TAG, "音乐文件路径：" + musicPath);
+                                        musicList.add(new Music(webSocketData.getListNo(), musicPath, webSocketData.getPlayCount(), 0));
                                     }
-                                    MusicPlay.with(WebSocketService.this).play(newPathList);
+                                    int interval1 = webSocketData.getVoiceInterval1();
+                                    int interval2 = webSocketData.getVoiceInterval2();
+                                    MusicPlay.with(WebSocketService.this).addMusic(new MusicList(webSocketData.getListNo(), musicList, webSocketData.getPlayCount(), 0), interval1, interval2);
                                 }
+                            } else {
+                                MusicPlay.with(WebSocketService.this).removeMusic(webSocketData.getListNo());
                             }
                         }
                     }
@@ -193,6 +204,7 @@ public class WebSocketService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        MusicPlay.with(WebSocketService.this).release();
         closeWebSocket();
         threadPool.shutdown();
     }
