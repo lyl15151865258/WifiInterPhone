@@ -65,10 +65,8 @@ public class ActivityController {
      * @param activity Activity对象
      */
     public static void finishActivity(Activity activity) {
-        if (activities.contains(activity)) {
-            activities.remove(activity);
-            activity.finish();
-        }
+        activity.finish();
+        activities.remove(activity);
         LogUtils.d("ActivityController", "finishActivity：" + activity.getLocalClassName() + ",当前Activity栈队列中activity对象共有" + activities.size() + "个");
     }
 

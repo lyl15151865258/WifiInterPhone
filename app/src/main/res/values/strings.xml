@@ -35,9 +35,9 @@
 
     <string name="listview_header_hint_normal">下拉刷新</string>
     <string name="listview_header_hint_release">释放立即刷新</string>
-    <string name="listview_loading">正在加载...</string>
+    <string name="listview_loading">正在加载&#8230;</string>
     <string name="nomore_loading">没有了</string>
-    <string name="refreshing">正在刷新...</string>
+    <string name="refreshing">正在刷新&#8230;</string>
     <string name="refresh_done">刷新完成</string>
     <string name="loading_done">加载完成</string>
     <string name="listview_header_last_time">上次更新时间：</string>
@@ -55,5 +55,14 @@
     <string name="send_wlan_unicast">局域网单播</string>
     <string name="send_wlan_broadcast">局域网广播</string>
     <string name="send_wan">广域网</string>
+
+    <!--layout控件描述，无需翻译-->
+    <string name="toggle_speak" translatable="false">Toggle speaker on/off</string>
+    <string name="toggle_mic" translatable="false">Toggle microphone on/off</string>
+    <string name="disconnect_call" translatable="false">Disconnect Call</string>
+
+    <!--SharedPreferences引用，无需翻译-->
+    <string name="pref_room_key" translatable="false">room_preference</string>
+    <string name="language" translatable="false">language</string>
 
 </resources>

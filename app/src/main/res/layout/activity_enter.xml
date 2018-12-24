@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/activity_enter"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+    <net.zhongbenshuo.wifiinterphone.widget.MyToolbar
+        android:id="@+id/myToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dp_50"
+        app:titleText="@string/app_name" />
+
+    <TextView
+        android:id="@+id/textViewName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="IM 功能测试,提供简单的语音录音，上传，下载，播放功能：" />
+
+    <LinearLayout
+        android:id="@+id/IMtest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textViewName"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnRecord"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="jumpOnClick"
+            android:text="录音/停止" />
+
+        <Button
+            android:id="@+id/btnPlay"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="jumpOnClick"
+            android:text="播放/停止" />
+    </LinearLayout>
+
+
+    <TextView
+        android:id="@+id/textViewName1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/IMtest"
+        android:layout_marginTop="20dp"
+        android:text="实时音视频 功能测试,输入房间号，点击加入房间，进入同一个房间的用户可以进行简单的音视频通话：" />
+
+
+    <Button
+        android:id="@+id/avbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textViewName1"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:onClick="jumpOnClick"
+        android:text="加入房间" />
+
+
+    <EditText
+        android:id="@+id/room_edittext"
+        android:layout_width="wrap_content"
+        android:layout_height="60dp"
+        android:layout_below="@+id/avbutton"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:hint="输入房间号:" />
+</LinearLayout>

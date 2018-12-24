@@ -9,6 +9,7 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import net.zhongbenshuo.wifiinterphone.R;
+import net.zhongbenshuo.wifiinterphone.activity.chat.EnterActivity;
 import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
 import net.zhongbenshuo.wifiinterphone.utils.ApkUtils;
@@ -77,7 +78,8 @@ public class SettingActivity extends BaseActivity {
                 break;
             case R.id.ll_serverSettings:
                 // 语音测试
-                openActivity(MediaTestActivity.class);
+//                openActivity(MediaTestActivity.class);
+                openActivity(EnterActivity.class);
                 break;
             case R.id.ll_setName:
                 // 姓名修改

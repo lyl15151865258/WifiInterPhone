@@ -62,7 +62,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation 'de.hdodenhof:circleimageview:2.2.0'
     implementation 'org.jetbrains:annotations:15.0'
-
     //okhttp、retrofit
     implementation 'com.squareup.okhttp3:okhttp:3.10.0'
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'
@@ -70,19 +69,17 @@ dependencies {
     implementation 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
     implementation 'com.squareup.retrofit2:converter-scalars:2.1.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:3.5.0'
-
     //rxjava
     implementation 'io.reactivex:rxandroid:1.2.1'
     implementation 'io.reactivex:rxjava:1.2.1'
     implementation 'com.jakewharton.rxbinding:rxbinding:0.4.0'
-
     //Glide
     implementation 'com.github.bumptech.glide:glide:4.8.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
-
     //WebSocket 依赖包
     implementation 'org.java-websocket:Java-WebSocket:1.3.9'
-
     // json解析
     implementation 'com.google.code.gson:gson:2.8.2'
+    implementation files('libs/reechat.jar')
+    implementation files('libs/Msc.jar')
 }

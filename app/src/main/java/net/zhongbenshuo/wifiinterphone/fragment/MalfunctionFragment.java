@@ -93,7 +93,7 @@ public class MalfunctionFragment extends BaseFragment {
         rvMalfunction.addOnScrollListener(onScrollListener);
 
         Intent intent = new Intent(mContext, WebSocketService.class);
-        intent.putExtra("ServerHost", "192.168.1.126");
+        intent.putExtra("ServerHost", "192.168.2.102");
         intent.putExtra("WebSocketPort", "50100");
         mContext.startService(intent);
 

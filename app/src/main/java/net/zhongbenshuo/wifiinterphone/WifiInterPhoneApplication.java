@@ -1,17 +1,14 @@
 package net.zhongbenshuo.wifiinterphone;
 
 import android.app.Application;
-import android.content.Context;
 import android.os.Build;
-import android.os.Environment;
 import android.os.StrictMode;
-import android.util.DisplayMetrics;
+
+import com.reechat.voiceengine.NativeVoiceEngine;
 
 import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.utils.CrashHandler;
 import net.zhongbenshuo.wifiinterphone.utils.MyLifecycleHandler;
-
-import java.io.File;
 
 /**
  * Application类
@@ -24,25 +21,22 @@ import java.io.File;
 public class WifiInterPhoneApplication extends Application {
 
     private static WifiInterPhoneApplication instance;
-    private Context mContext;
 
-    public static int screenWidth = 0;
-
-    public static int screenHeight = 0;
-
-    public static String mSDCardPath;
-    public static final String APP_FOLDER_NAME = "Njmeter";
+    private static final String appId = "3768c59536565afb";
+    private static final String appKey = "df191ec457951c35b8796697c204382d0e12d4e8cb56f54df6a54394be74c5fe";
+    private static final String serverAddress = "192.168.2.104:8080";
 
     @Override
     public void onCreate() {
         super.onCreate();
-        mContext = getApplicationContext();
         instance = this;
         SPHelper.init(this);
         //注册Activity生命周期回调
         registerActivityLifecycleCallbacks(new MyLifecycleHandler());
         // 捕捉异常
         CrashHandler.getInstance().init(this);
+        // 初始化音视频通话SDK
+        initNativeVoiceEngineSDK();
         // android 7.0系统解决拍照的问题
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
             StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
@@ -64,29 +58,12 @@ public class WifiInterPhoneApplication extends Application {
     }
 
     /**
-     * 获取屏幕尺寸
+     * 初始化音视频通信SDK
      */
-    private void getScreenSize() {
-        DisplayMetrics dm = getResources().getDisplayMetrics();
-        screenHeight = dm.heightPixels;
-        screenWidth = dm.widthPixels;
-    }
-
-    private boolean initDirs() {
-        mSDCardPath = Environment.getExternalStorageDirectory().toString();
-        if (mSDCardPath == null) {
-            return false;
-        }
-        File f = new File(mSDCardPath, APP_FOLDER_NAME);
-        if (!f.exists()) {
-            try {
-                return f.mkdirs();
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            }
-        }
-        return true;
+    private void initNativeVoiceEngineSDK() {
+        NativeVoiceEngine.getInstance().SetSdkParam("RoomServerAddr", serverAddress);
+        //初始化 SDK
+        NativeVoiceEngine.getInstance().initSDK(appId, appKey);
     }
 
 }
