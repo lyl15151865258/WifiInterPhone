@@ -74,6 +74,11 @@ public class VideoActivity extends BaseActivity {
         toggleMuteButton = findViewById(R.id.button_call_toggle_mic);
         toggleSpeakerButton = findViewById(R.id.button_call_toggle_speak);
 
+        findViewById(R.id.btnAddUser).setOnClickListener(onClickListener);
+        findViewById(R.id.btnRemoveUser).setOnClickListener(onClickListener);
+        findViewById(R.id.btnShareScreen).setOnClickListener(onClickListener);
+        findViewById(R.id.btnChangeCamera).setOnClickListener(onClickListener);
+
         //开关扬声器
         NativeVoiceEngine.getInstance().UseLoudSpeaker(blouderspeak);
         toggleSpeakerButton.setAlpha(blouderspeak ? 1.0f : 0.3f);
@@ -105,25 +110,77 @@ public class VideoActivity extends BaseActivity {
     }
 
     private View.OnClickListener onClickListener = (v) -> {
+        EditText et = new EditText(this);
         switch (v.getId()) {
             case R.id.iv_left:
                 ActivityController.finishActivity(this);
                 break;
+            case R.id.btnAddUser:
+                // 添加用户
+                new AlertDialog.Builder(this).setTitle("输入观看用户id：")
+                        .setIcon(android.R.drawable.ic_dialog_info)
+                        .setView(et)
+                        .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                String input = et.getText().toString();
+                                if (input.equals("")) {
+                                    showToast("用户id空！" + input);
+                                } else {
+                                    if (!input.equals(username))
+                                        addSurfaceView(input);
+                                }
+                            }
+                        })
+                        .setNegativeButton("取消", null)
+                        .show();
+                break;
+            case R.id.btnRemoveUser:
+                // 删除用户
+                new AlertDialog.Builder(this).setTitle("输入删除用户id：")
+                        .setIcon(android.R.drawable.ic_dialog_info)
+                        .setView(et)
+                        .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                String input = et.getText().toString();
+                                if (input.equals("")) {
+                                    showToast("用户id空！" + input);
+                                } else {
+                                    if (!input.equals(username))
+                                        removeSurfaceView(input);
+                                }
+                            }
+                        })
+                        .setNegativeButton("取消", null)
+                        .show();
+                break;
+            case R.id.btnShareScreen:
+                // 分享屏幕，屏幕共享接口支持Android 5.0
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
+                    mVideoEngineImp.startScreenCapture(this);
+                } else {
+                    showToast("您的手机不支持分享屏幕");
+                }
+                break;
+            case R.id.btnChangeCamera:
+                // 切换前后摄像头
+                camera_index_ = camera_index_ == 1 ? 2 : 1;
+                mNVEngine.SwitchVideoSource(camera_index_);
+                break;
             case R.id.button_call_toggle_mic:
+                // 本地禁音接口
                 bunmute = !bunmute;
-                //本地禁音接口
                 NativeVoiceEngine.getInstance().SetSendVoice(bunmute);
                 toggleMuteButton.setAlpha(bunmute ? 1.0f : 0.3f);
                 break;
             case R.id.button_call_toggle_speak:
+                // 开关扬声器
                 blouderspeak = !blouderspeak;
-                //开关扬声器
                 NativeVoiceEngine.getInstance().UseLoudSpeaker(blouderspeak);
                 toggleSpeakerButton.setAlpha(blouderspeak ? 1.0f : 0.3f);
                 break;
             case R.id.button_call_disconnect:
+                // 请求离开房间
                 NativeVoiceEngine.getInstance().registerEventHandler(null);
-                //请求离开房间
                 NativeVoiceEngine.getInstance().RequestQuitRoom();
                 for (String key : surfaceViewMap.keySet()) {
                     SurfaceView mSurfaceView = surfaceViewMap.get(key);
@@ -328,63 +385,5 @@ public class VideoActivity extends BaseActivity {
         removeId.clear();
         super.onBackPressed();
     }
-
-    public void jumpOnClick1(View view) {
-        EditText et = new EditText(this);
-        switch (view.getId()) {
-            case R.id.Button1:
-                new AlertDialog.Builder(this).setTitle("输入观看用户id：")
-                        .setIcon(android.R.drawable.ic_dialog_info)
-                        .setView(et)
-                        .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                String input = et.getText().toString();
-                                if (input.equals("")) {
-                                    showToast("用户id空！" + input);
-                                } else {
-                                    if (!input.equals(username))
-                                        addSurfaceView(input);
-                                }
-                            }
-                        })
-                        .setNegativeButton("取消", null)
-                        .show();
-
-                break;
-            case R.id.Button2:
-                new AlertDialog.Builder(this).setTitle("输入删除用户id：")
-                        .setIcon(android.R.drawable.ic_dialog_info)
-                        .setView(et)
-                        .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                String input = et.getText().toString();
-                                if (input.equals("")) {
-                                    showToast("用户id空！" + input);
-                                } else {
-                                    if (!input.equals(username))
-                                        removeSurfaceView(input);
-                                }
-                            }
-                        })
-                        .setNegativeButton("取消", null)
-                        .show();
-                break;
-            case R.id.Button3:
-                //屏幕共享接口支持Android 5.0
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
-                    mVideoEngineImp.startScreenCapture(this);
-                } else {
-                    showToast("您的手机不支持分享屏幕");
-                }
-                break;
-            case R.id.Button4:
-                camera_index_ = camera_index_ == 1 ? 2 : 1;
-                mNVEngine.SwitchVideoSource(camera_index_);
-                break;
-            default:
-                break;
-        }
-    }
-
 
 }

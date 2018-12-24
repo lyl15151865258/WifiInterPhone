@@ -12,13 +12,14 @@ import org.json.JSONObject;
  */
 
 public class HandleUtil {
-    public  ReceiveDataFromC receiveDataFromC = new ReceiveDataFromC();
+
+    public ReceiveDataFromC receiveDataFromC = new ReceiveDataFromC();
 
     private static final HandleUtil instance = new HandleUtil();
 
     private SDKListener mSDKListener = null;
 
-    private String userlist = "";
+    private String userList = "";
     private String downloadUrl = "";
 
     public HandleUtil() {
@@ -60,52 +61,43 @@ public class HandleUtil {
         return null;
     }
 
-    public String getUserList(){
-        return userlist;
+    public String getUserList() {
+        return userList;
     }
 
-    public String getdownloadUrl(){
+    public String getDownloadUrl() {
         return downloadUrl;
     }
 
-    SdkVoiceListener myListener = new SdkVoiceListener() {
-        @Override
-        public void SdkListener(int cmdType, final int error, String dataPtr, int dataSize) {
-            switch (cmdType) {
-                case 1://初始化
-                {
-                    mSDKListener.onInitSDK(error, dataPtr);
+    private SdkVoiceListener myListener = (cmdType, error, dataPtr, dataSize) -> {
+        switch (cmdType) {
+            case 1:
+                //初始化
+                mSDKListener.onInitSDK(error, dataPtr);
+                break;
+            case 7:
+                //进入房间
+                mSDKListener.onJoinRoom(error, dataPtr);
+                break;
+            case 18:
+                userList = dataPtr;
+                mSDKListener.onNotifyUserJoinRoom(dataPtr);
+                break;
+            case 25:
+                //录音结束，上传成功
+                FileData fileData = getDataFromJson(dataPtr);
+                if (fileData == null) {
+                    downloadUrl = null;
+                } else {
+                    downloadUrl = fileData.getUrl();
                 }
                 break;
-
-                case 7://进入房间
-                {
-                    mSDKListener.onJoinRoom(error, dataPtr);
-                }
+            case 35:
+                //播放结束
                 break;
-
-                case 18:
-                {
-                    userlist = dataPtr;
-                    mSDKListener.onNotifyUserJoinRoom(dataPtr);
-                }
+            default:
                 break;
-
-                case 25://录音结束，上传成功
-                    FileData fileData = getDataFromJson(dataPtr);
-                    if (fileData == null) {
-                        downloadUrl = null;
-                    } else {
-                        downloadUrl = fileData.getUrl();
-                    }
-                    break;
-                case 35://播放结束
-                    break;
-
-            }
         }
     };
-
-
 
 }

@@ -207,7 +207,7 @@ public class EnterActivity extends BaseActivity implements SDKListener {
                     rtChatSdk.StopPlayIMVoice();
                     btnPlay.setText("已经停止播放");
                 } else {
-                    String downloadUrlLocal = HandleUtil.getInstance().getdownloadUrl();
+                    String downloadUrlLocal = HandleUtil.getInstance().getDownloadUrl();
                     if (downloadUrlLocal == null) {
                         return;
                     }

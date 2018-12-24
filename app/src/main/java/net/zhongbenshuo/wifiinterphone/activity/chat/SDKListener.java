@@ -5,6 +5,7 @@ package net.zhongbenshuo.wifiinterphone.activity.chat;
  */
 
 public interface SDKListener {
+
     void onInitSDK(int state, String errorinfo);
 
     void onJoinRoom(int state, String errorinfo);
