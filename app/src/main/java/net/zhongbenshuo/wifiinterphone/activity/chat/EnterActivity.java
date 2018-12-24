@@ -18,7 +18,7 @@ import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 
 import java.util.Random;
 
-public class EnterActivity extends BaseActivity implements SDKListener {
+public class EnterActivity extends BaseActivity {
 
     private static final int CONNECTION_REQUEST = 1000;
     private NativeVoiceEngine rtChatSdk;
@@ -26,7 +26,6 @@ public class EnterActivity extends BaseActivity implements SDKListener {
     private String userName = "";
     private EditText roomEditText;
     private boolean isLunched = false;
-    private String keyprefRoom;
     private static final int kRoomType = 0x03 | 0x60 | 0x1800;
     private Button btnRecord;
     private Button btnPlay;
@@ -50,8 +49,7 @@ public class EnterActivity extends BaseActivity implements SDKListener {
         rtChatSdk.register(this);
         rtChatSdk.setDebugLogEnabled(true);
 
-        HandleUtil.getInstance().setListener(this);
-        keyprefRoom = getString(R.string.pref_room_key);
+        HandleUtil.getInstance().setListener(sdkListener);
 
         roomEditText = findViewById(R.id.room_edittext);
         roomEditText.requestFocus();
@@ -61,7 +59,7 @@ public class EnterActivity extends BaseActivity implements SDKListener {
     @Override
     public void onResume() {
         super.onResume();
-        String room = SPHelper.getString(keyprefRoom, "");
+        String room = SPHelper.getString(getString(R.string.pref_room_key), "");
         roomEditText.setText(room);
         isLunched = false;
     }
@@ -79,6 +77,49 @@ public class EnterActivity extends BaseActivity implements SDKListener {
         }
     };
 
+    private SDKListener sdkListener = new SDKListener() {
+        @Override
+        public void onInitSDK(int state, String errorinfo) {
+            String msg = "SDK初始化失败:";
+            int ret = rtChatSdk.GetSdkState();
+            if (state == 1) {
+                msg = "SDK初始化成功:";
+            }
+
+            if (state == 0 && ret > 0) {
+                msg = "SDK重复初始化:";
+            }
+
+            Toast.makeText(EnterActivity.this, msg + errorinfo, Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onJoinRoom(int state, String errorinfo) {
+            String msg = "用户进入房间失败:";
+            if (state == 1 && !isLunched) {
+                msg = "用户进入房间成功:";
+                launchVideoActivity();
+            }
+            Toast.makeText(EnterActivity.this, msg + errorinfo, Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onLeaveRoom(int state, String errorinfo) {
+
+        }
+
+        @Override
+        public void onNotifyUserJoinRoom(String userlist) {
+
+        }
+
+        @Override
+        public void onNotifyUserLeaveRoom(String userlist) {
+
+        }
+
+    };
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         rtChatSdk.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -88,7 +129,7 @@ public class EnterActivity extends BaseActivity implements SDKListener {
     public void onPause() {
         super.onPause();
         String room = roomEditText.getText().toString();
-        SPHelper.save(keyprefRoom, room);
+        SPHelper.save(getString(R.string.pref_room_key), room);
     }
 
     @Override
@@ -100,41 +141,6 @@ public class EnterActivity extends BaseActivity implements SDKListener {
             rtChatSdk = null;
         }
         this.finish();
-    }
-
-    @Override
-    public void onInitSDK(int state, String errorinfo) {
-        String msg = "SDK初始化失败:";
-        int ret = rtChatSdk.GetSdkState();
-        if (state == 1) {
-            msg = "SDK初始化成功:";
-        }
-
-        if (state == 0 && ret > 0) {
-            msg = "SDK重复初始化:";
-        }
-
-        Toast.makeText(EnterActivity.this, msg + errorinfo, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onJoinRoom(int state, String errorinfo) {
-        String msg = "用户进入房间失败:";
-        if (state == 1 && !isLunched) {
-            msg = "用户进入房间成功:";
-            launchVideoActivity();
-        }
-        Toast.makeText(EnterActivity.this, msg + errorinfo, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onNotifyUserJoinRoom(String userlist) {
-
-    }
-
-    @Override
-    public void onNotifyUserLeaveRoom() {
-
     }
 
     public static String getRandomString(int strLength) {

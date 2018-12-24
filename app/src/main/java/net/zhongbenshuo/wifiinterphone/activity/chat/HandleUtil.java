@@ -5,6 +5,8 @@ import android.text.TextUtils;
 import com.reechat.voiceengine.SdkVoiceListener;
 import com.reechat.voiceengine.ReceiveDataFromC;
 
+import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
+
 import org.json.JSONObject;
 
 /**
@@ -70,18 +72,31 @@ public class HandleUtil {
     }
 
     private SdkVoiceListener myListener = (cmdType, error, dataPtr, dataSize) -> {
+        LogUtils.d("HandleUtil", "cmdType:" + cmdType + "，dataPtr:" + dataPtr);
         switch (cmdType) {
             case 1:
                 //初始化
                 mSDKListener.onInitSDK(error, dataPtr);
                 break;
             case 7:
-                //进入房间
+                //自己进入房间成功
                 mSDKListener.onJoinRoom(error, dataPtr);
                 break;
+            case 16:
+                //自己退出房间成功，用户列表清空
+                mSDKListener.onLeaveRoom(error, dataPtr);
+                break;
+            case 17:
+                //用户列表发生变化
+                break;
             case 18:
+                //有用户进入房间
                 userList = dataPtr;
                 mSDKListener.onNotifyUserJoinRoom(dataPtr);
+            case 19:
+                //有用户离开房间
+                userList = dataPtr;
+                mSDKListener.onNotifyUserLeaveRoom(dataPtr);
                 break;
             case 25:
                 //录音结束，上传成功
@@ -94,6 +109,7 @@ public class HandleUtil {
                 break;
             case 35:
                 //播放结束
+
                 break;
             default:
                 break;

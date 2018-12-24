@@ -5,7 +5,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.EditText;
@@ -21,6 +20,8 @@ import com.reechat.voiceengine.EventInterface;
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.activity.BaseActivity;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
+import net.zhongbenshuo.wifiinterphone.utils.DeviceUtil;
+import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 
 import org.json.JSONArray;
@@ -33,6 +34,7 @@ import java.util.Map;
 
 public class VideoActivity extends BaseActivity {
 
+    private final String TAG = "VideoActivityTag";
     private ImageButton toggleMuteButton, toggleSpeakerButton;
     private RelativeLayout remoteRelLayout;
     private List<Integer> removeId = new ArrayList<>();
@@ -225,11 +227,10 @@ public class VideoActivity extends BaseActivity {
     }
 
     private void setLayoutRule(SurfaceView mSurfaceView, int index) {
-        DisplayMetrics metric = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metric);
-        int width = metric.widthPixels;
-        int px = 180 * metric.densityDpi / DisplayMetrics.DENSITY_DEFAULT;
-        RelativeLayout.LayoutParams param = new RelativeLayout.LayoutParams(width / 2, px);
+        LogUtils.d(TAG, "增加SurfaceView");
+        RelativeLayout.LayoutParams param = new RelativeLayout.LayoutParams(mWidth/2, DeviceUtil.dp2px(this, 180));
+        int margin = DeviceUtil.dp2px(this, 2);
+        param.setMargins(margin, margin, margin, margin);
         mSurfaceView.setId(index);
         switch (index) {
             case 10: {
@@ -262,6 +263,7 @@ public class VideoActivity extends BaseActivity {
         if (surfaceViewMap.containsKey(username)) {
             return;
         }
+        LogUtils.d(TAG, "addLocalSurfaceView:" + username);
         //创建渲染窗口
         SurfaceView mSurfaceView = mNVEngine.CreateAVideoWindow(1);
         int addCount = count;
@@ -290,6 +292,7 @@ public class VideoActivity extends BaseActivity {
         if (surfaceViewMap.containsKey(userId)) {
             return;
         }
+        LogUtils.d(TAG, "addSurfaceView:" + userId);
         //创建渲染窗口
         SurfaceView mSurfaceView = mNVEngine.CreateAVideoWindow(1);
         int addCount = count;

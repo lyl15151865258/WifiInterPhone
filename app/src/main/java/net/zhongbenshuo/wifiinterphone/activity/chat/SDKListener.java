@@ -10,8 +10,10 @@ public interface SDKListener {
 
     void onJoinRoom(int state, String errorinfo);
 
+    void onLeaveRoom(int state, String errorinfo);
+
     void onNotifyUserJoinRoom(String userlist);
 
-    void onNotifyUserLeaveRoom();
+    void onNotifyUserLeaveRoom(String userlist);
 
 }
