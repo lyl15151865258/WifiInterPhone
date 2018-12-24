@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.telephony.TelephonyManager;
+import android.util.DisplayMetrics;
 
 import java.lang.reflect.Field;
 
@@ -125,6 +126,18 @@ public class DeviceUtil {
             }
         }
         return statusBarHeight;
+    }
+
+    public static int getScreenWidth(Activity activity) {
+        DisplayMetrics dm = new DisplayMetrics();
+        activity.getWindowManager().getDefaultDisplay().getMetrics(dm);
+        return dm.widthPixels;
+    }
+
+    public static int getScreenHeight(Activity activity) {
+        DisplayMetrics dm = new DisplayMetrics();
+        activity.getWindowManager().getDefaultDisplay().getMetrics(dm);
+        return dm.heightPixels;
     }
 
 }

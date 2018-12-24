@@ -24,7 +24,7 @@ public class WifiInterPhoneApplication extends Application {
 
     private static final String appId = "3768c59536565afb";
     private static final String appKey = "df191ec457951c35b8796697c204382d0e12d4e8cb56f54df6a54394be74c5fe";
-    private static final String serverAddress = "192.168.2.104:8080";
+    private static final String serverAddress = "47.99.72.90:8080";
 
     @Override
     public void onCreate() {

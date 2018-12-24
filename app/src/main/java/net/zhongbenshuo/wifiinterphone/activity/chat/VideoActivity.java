@@ -5,6 +5,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.EditText;
@@ -19,6 +21,8 @@ import com.reechat.voiceengine.EventInterface;
 
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.activity.BaseActivity;
+import net.zhongbenshuo.wifiinterphone.adapter.VideoAdapter;
+import net.zhongbenshuo.wifiinterphone.bean.Video;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
 import net.zhongbenshuo.wifiinterphone.utils.DeviceUtil;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
@@ -28,23 +32,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class VideoActivity extends BaseActivity {
 
     private final String TAG = "VideoActivityTag";
     private ImageButton toggleMuteButton, toggleSpeakerButton;
-    private RelativeLayout remoteRelLayout;
-    private List<Integer> removeId = new ArrayList<>();
-    private Map<String, SurfaceView> surfaceViewMap;
+    private List<Video> videoList = new ArrayList<>();
+    private VideoAdapter videoAdapter;
     private String username;
     private boolean blouderspeak = false;
     private boolean bunmute = true;
     private VideoEngineImpl mVideoEngineImp;
     private NativeVideoEngine mNVEngine;
-    private int count = 10;
     private int camera_index_ = 1;
 
     @Override
@@ -62,9 +62,12 @@ public class VideoActivity extends BaseActivity {
         mNVEngine = NativeVideoEngine.getInstance();
 
         mVideoEngineImp = VideoEngineImpl.getInstance();
-        surfaceViewMap = new HashMap<>();
 
-        remoteRelLayout = findViewById(R.id.remoteContainer);
+        RecyclerView remoteContainer = findViewById(R.id.remoteContainer);
+        GridLayoutManager layoutManage = new GridLayoutManager(this, 2);
+        remoteContainer.setLayoutManager(layoutManage);
+        videoAdapter = new VideoAdapter(this, videoList);
+        remoteContainer.setAdapter(videoAdapter);
 
         TextView tvRoomId = findViewById(R.id.tv_roomId);
         TextView tvUserName = findViewById(R.id.tv_userName);
@@ -182,53 +185,52 @@ public class VideoActivity extends BaseActivity {
                 break;
             case R.id.button_call_disconnect:
                 // 请求离开房间
-                NativeVoiceEngine.getInstance().registerEventHandler(null);
-                NativeVoiceEngine.getInstance().RequestQuitRoom();
-                for (String key : surfaceViewMap.keySet()) {
-                    SurfaceView mSurfaceView = surfaceViewMap.get(key);
-                    if (mSurfaceView != null) {
-                        remoteRelLayout.removeView(mSurfaceView);
-                    }
-                    //销毁渲染窗口
-                    mNVEngine.DestroyAVideoWindow(mSurfaceView);
-                }
-                surfaceViewMap.clear();
-                removeId.clear();
-                ActivityController.finishActivity(this);
+                leaveRoom();
                 break;
             default:
                 break;
         }
     };
 
-    @Override
-    protected void onDestroy() {
+    private void leaveRoom() {
         NativeVoiceEngine.getInstance().registerEventHandler(null);
         NativeVoiceEngine.getInstance().RequestQuitRoom();
-        for (String key : surfaceViewMap.keySet()) {
-            SurfaceView mSurfaceView = surfaceViewMap.get(key);
-            if (mSurfaceView == null)
-                return;
-            remoteRelLayout.removeView(mSurfaceView);
-            //销毁渲染窗口
-            mNVEngine.DestroyAVideoWindow(mSurfaceView);
+        for (Video video : videoList) {
+            SurfaceView mSurfaceView = video.getSurfaceView();
+            if (mSurfaceView != null) {
+                //销毁渲染窗口
+                mNVEngine.DestroyAVideoWindow(mSurfaceView);
+            }
         }
-        surfaceViewMap.clear();
-        removeId.clear();
+        videoList.clear();
+        videoAdapter.notifyDataSetChanged();
         ActivityController.finishActivity(this);
+    }
+
+    @Override
+    protected void onDestroy() {
         super.onDestroy();
+        leaveRoom();
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            mVideoEngineImp.onActivityResult(requestCode, resultCode, data, surfaceViewMap.get(username));
+            SurfaceView mSurfaceView = null;
+            for (int i = 0; i < videoList.size(); i++) {
+                if (videoList.get(i).getVideoNumber().equals(username)) {
+                    mSurfaceView = videoList.get(i).getSurfaceView();
+                }
+            }
+            if (mSurfaceView != null) {
+                mVideoEngineImp.onActivityResult(requestCode, resultCode, data, mSurfaceView);
+            }
         }
     }
 
     private void setLayoutRule(SurfaceView mSurfaceView, int index) {
         LogUtils.d(TAG, "增加SurfaceView");
-        RelativeLayout.LayoutParams param = new RelativeLayout.LayoutParams(mWidth/2, DeviceUtil.dp2px(this, 180));
+        RelativeLayout.LayoutParams param = new RelativeLayout.LayoutParams(mWidth / 2, DeviceUtil.dp2px(this, 180));
         int margin = DeviceUtil.dp2px(this, 2);
         param.setMargins(margin, margin, margin, margin);
         mSurfaceView.setId(index);
@@ -256,90 +258,56 @@ public class VideoActivity extends BaseActivity {
             default:
                 break;
         }
-        remoteRelLayout.addView(mSurfaceView, param);
     }
 
     private void addLocalSurfaceView() {
-        if (surfaceViewMap.containsKey(username)) {
-            return;
+        if (!videoList.contains(new Video(username, null))) {
+            LogUtils.d(TAG, "addLocalSurfaceView:" + username);
+            //创建渲染窗口
+            SurfaceView mSurfaceView = mNVEngine.CreateAVideoWindow(1);
+            if (mSurfaceView!=null){
+            videoList.add(new Video(username, mSurfaceView));
+            videoAdapter.notifyItemInserted(videoList.size() - 1);}
         }
-        LogUtils.d(TAG, "addLocalSurfaceView:" + username);
-        //创建渲染窗口
-        SurfaceView mSurfaceView = mNVEngine.CreateAVideoWindow(1);
-        int addCount = count;
-        boolean removeIdFlag = false;
-        if (removeId.isEmpty()) {
-            removeIdFlag = true;
-        } else {
-            int min = 20;
-            for (int it : removeId) {
-                min = it < min ? it : min;
-            }
-            addCount = min;
-            removeId.remove(Integer.valueOf(min));
-        }
-
-        setLayoutRule(mSurfaceView, addCount);
-
-        surfaceViewMap.put(username, mSurfaceView);
-        if (removeIdFlag)
-            count++;
-
-        mSurfaceView.setVisibility(View.VISIBLE);
     }
 
     private void addSurfaceView(String userId) {
-        if (surfaceViewMap.containsKey(userId)) {
-            return;
-        }
-        LogUtils.d(TAG, "addSurfaceView:" + userId);
-        //创建渲染窗口
-        SurfaceView mSurfaceView = mNVEngine.CreateAVideoWindow(1);
-        int addCount = count;
-        boolean removeIdFlag = false;
-        if (removeId.isEmpty()) {
-            removeIdFlag = true;
-        } else {
-            int min = 20;
-            for (int it : removeId) {
-                min = it < min ? it : min;
+        if (!videoList.contains(new Video(userId, null))) {
+            LogUtils.d(TAG, "addSurfaceView:" + userId);
+            //创建渲染窗口
+            SurfaceView mSurfaceView = mNVEngine.CreateAVideoWindow(1);
+            videoList.add(new Video(userId, mSurfaceView));
+            videoAdapter.notifyItemInserted(videoList.size() - 1);
+
+            //观看远端视频
+            int ret = mNVEngine.ObserverRemoteTargetVideoV1(userId, mSurfaceView);
+            if (ret == 0) {
+                //销毁渲染窗口
+                mNVEngine.DestroyAVideoWindow(mSurfaceView);
             }
-            addCount = min;
-            removeId.remove(Integer.valueOf(min));
         }
-        //观看远端视频
-        int ret = mNVEngine.ObserverRemoteTargetVideoV1(userId, mSurfaceView);
-        if (ret == 0) {
-            //销毁渲染窗口
-            mNVEngine.DestroyAVideoWindow(mSurfaceView);
-            return;
-        }
-        setLayoutRule(mSurfaceView, addCount);
-
-        surfaceViewMap.put(userId, mSurfaceView);
-        if (removeIdFlag)
-            count++;
-
-        mSurfaceView.setVisibility(View.VISIBLE);
     }
 
     private void removeSurfaceView(String userId) {
-        SurfaceView mSurfaceView = surfaceViewMap.get(userId);
-        if (mSurfaceView == null)
-            return;
-        //停止观看远端视频
-        mNVEngine.ObserverRemoteTargetVideoV1(userId, null);
-        mSurfaceView.setVisibility(View.INVISIBLE);
-        int id = mSurfaceView.getId();
-        if (id == (count - 1)) {
-            count--;
-        } else {
-            removeId.add(id);
+        int position = -1;
+        SurfaceView mSurfaceView = null;
+        for (int i = 0; i < videoList.size(); i++) {
+            if (videoList.get(i).getVideoNumber().equals(userId)) {
+                mSurfaceView = videoList.get(i).getSurfaceView();
+                position = i;
+            }
         }
-        remoteRelLayout.removeView(mSurfaceView);
-        //销毁渲染窗口
-        mNVEngine.DestroyAVideoWindow(mSurfaceView);
-        surfaceViewMap.remove(userId);
+        if (mSurfaceView != null) {
+            //停止观看远端视频
+            mNVEngine.ObserverRemoteTargetVideoV1(userId, null);
+            mSurfaceView.setVisibility(View.INVISIBLE);
+
+            //销毁渲染窗口
+            mNVEngine.DestroyAVideoWindow(mSurfaceView);
+
+            videoList.remove(position);
+            videoAdapter.notifyItemRemoved(position);
+        }
     }
 
     /**
@@ -348,8 +316,14 @@ public class VideoActivity extends BaseActivity {
     private void initVideo() {
         //创建localSurfaceView
         addLocalSurfaceView();
-        //观看本地视频，
-        mNVEngine.ObserverLocalVideoWindow(true, surfaceViewMap.get(username));
+        //观看本地视频
+        SurfaceView mSurfaceView = null;
+        for (int i = 0; i < videoList.size(); i++) {
+            if (videoList.get(i).getVideoNumber().equals(username)) {
+                mSurfaceView = videoList.get(i).getSurfaceView();
+            }
+        }
+        mNVEngine.ObserverLocalVideoWindow(true, mSurfaceView);
         //发送本地视频
         mNVEngine.StartSendVideo();
         addSurfaceView("");
@@ -371,22 +345,5 @@ public class VideoActivity extends BaseActivity {
             removeSurfaceView(uuid);
         }
     };
-
-    @Override
-    public void onBackPressed() {
-        NativeVoiceEngine.getInstance().registerEventHandler(null);
-        NativeVoiceEngine.getInstance().RequestQuitRoom();
-        for (String key : surfaceViewMap.keySet()) {
-            SurfaceView mSurfaceView = surfaceViewMap.get(key);
-            if (mSurfaceView == null)
-                return;
-            remoteRelLayout.removeView(mSurfaceView);
-            //销毁渲染窗口
-            mNVEngine.DestroyAVideoWindow(mSurfaceView);
-        }
-        surfaceViewMap.clear();
-        removeId.clear();
-        super.onBackPressed();
-    }
 
 }
