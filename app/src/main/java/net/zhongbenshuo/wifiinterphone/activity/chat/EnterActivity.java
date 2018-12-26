@@ -6,7 +6,6 @@ import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.reechat.voiceengine.NativeVoiceEngine;
 
@@ -43,6 +42,9 @@ public class EnterActivity extends BaseActivity {
 
         btnRecord = findViewById(R.id.btnRecord);
         btnPlay = findViewById(R.id.btnPlay);
+        findViewById(R.id.btnRecord).setOnClickListener(onClickListener);
+        findViewById(R.id.btnPlay).setOnClickListener(onClickListener);
+        findViewById(R.id.brnEnterRoom).setOnClickListener(onClickListener);
 
         //获取实例
         rtChatSdk = NativeVoiceEngine.getInstance();
@@ -72,6 +74,53 @@ public class EnterActivity extends BaseActivity {
                 rtChatSdk = null;
                 ActivityController.finishActivity(this);
                 break;
+            case R.id.btnRecord:
+                if (isRecording) {
+                    //停止录音接口
+                    rtChatSdk.StopIMRecord();
+                    btnRecord.setText("已经停止录音");
+                } else {
+                    //开始录音接口
+                    boolean ret = rtChatSdk.StartIMRecord(false, false, 1);
+                    showToast(" startRecordVoice  code = " + ret);
+                    btnRecord.setText("正在录音");
+                }
+                isRecording = !isRecording;
+                break;
+            case R.id.btnPlay:
+                if (isPlaying) {
+                    //停止播放接口
+                    rtChatSdk.StopPlayIMVoice();
+                    btnPlay.setText("已经停止播放");
+                } else {
+                    String downloadUrlLocal = HandleUtil.getInstance().getDownloadUrl();
+                    if (downloadUrlLocal == null) {
+                        return;
+                    }
+                    //开始播放接口
+                    rtChatSdk.StartPlayIMVoice(downloadUrlLocal);
+                    btnPlay.setText("正在播放");
+                }
+                isPlaying = !isPlaying;
+                break;
+            case R.id.brnEnterRoom:
+                //如果Im在录音播放状态，先停止录音播放，再加入房间；
+                if (isRecording) {
+                    //停止录音接口
+                    rtChatSdk.StopIMRecord();
+                    btnRecord.setText("已经停止录音");
+                }
+                if (isPlaying) {
+                    //停止播放接口
+                    rtChatSdk.StopPlayIMVoice();
+                    btnPlay.setText("已经停止播放");
+                }
+                this.userName = getRandomString(5);
+                rtChatSdk.SetUserInfo(userName,SPHelper.getString("UserName", "Not Defined"));
+//                this.userName = SPHelper.getString("UserName", "Not Defined");
+//                rtChatSdk.SetUserInfo(userName, getRandomString(6));
+                connectToRoom(roomEditText.getText().toString(), kRoomType);
+                break;
             default:
                 break;
         }
@@ -89,8 +138,7 @@ public class EnterActivity extends BaseActivity {
             if (state == 0 && ret > 0) {
                 msg = "SDK重复初始化:";
             }
-
-            Toast.makeText(EnterActivity.this, msg + errorinfo, Toast.LENGTH_SHORT).show();
+            showToast(msg + errorinfo);
         }
 
         @Override
@@ -100,7 +148,7 @@ public class EnterActivity extends BaseActivity {
                 msg = "用户进入房间成功:";
                 launchVideoActivity();
             }
-            Toast.makeText(EnterActivity.this, msg + errorinfo, Toast.LENGTH_SHORT).show();
+            showToast(msg + errorinfo);
         }
 
         @Override
@@ -164,7 +212,7 @@ public class EnterActivity extends BaseActivity {
     private void connectToRoom(String roomId, int mediaType) {
         int retCode;
         if (roomId == null) {
-            Toast.makeText(this, "请输入房间号", Toast.LENGTH_SHORT).show();
+            showToast("请输入房间号");
         } else {
             this.roomId = roomId;
             //请求加入房间
@@ -172,60 +220,5 @@ public class EnterActivity extends BaseActivity {
             retCode = rtChatSdk.RequestJoinRoom(roomId);
         }
     }
-
-    public void jumpOnClick(View view) {
-        switch (view.getId()) {
-            case R.id.avbutton: {
-                //如果Im在录音播放状态，先停止录音播放，再加入房间；
-                if (isRecording) {
-                    //停止录音接口
-                    rtChatSdk.StopIMRecord();
-                    btnRecord.setText("已经停止录音");
-                }
-                if (isPlaying) {
-                    //停止播放接口
-                    rtChatSdk.StopPlayIMVoice();
-                    btnPlay.setText("已经停止播放");
-                }
-                this.userName = getRandomString(5);
-                rtChatSdk.SetUserInfo(userName, getRandomString(6));
-                connectToRoom(roomEditText.getText().toString(), kRoomType);
-                break;
-            }
-            case R.id.btnRecord: {
-                if (isRecording) {
-                    //停止录音接口
-                    rtChatSdk.StopIMRecord();
-                    btnRecord.setText("已经停止录音");
-                } else {
-                    //开始录音接口
-                    boolean ret = rtChatSdk.StartIMRecord(false, false, 1);
-                    Toast.makeText(this, " startRecordVoice  code = " + ret, Toast.LENGTH_SHORT).show();
-                    btnRecord.setText("正在录音");
-                }
-                isRecording = !isRecording;
-                break;
-            }
-
-            case R.id.btnPlay: {
-                if (isPlaying) {
-                    //停止播放接口
-                    rtChatSdk.StopPlayIMVoice();
-                    btnPlay.setText("已经停止播放");
-                } else {
-                    String downloadUrlLocal = HandleUtil.getInstance().getDownloadUrl();
-                    if (downloadUrlLocal == null) {
-                        return;
-                    }
-                    //开始播放接口
-                    rtChatSdk.StartPlayIMVoice(downloadUrlLocal);
-                    btnPlay.setText("正在播放");
-                }
-                isPlaying = !isPlaying;
-                break;
-            }
-        }
-    }
-
 
 }

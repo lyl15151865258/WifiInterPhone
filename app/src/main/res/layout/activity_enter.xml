@@ -23,23 +23,24 @@
         android:id="@+id/IMtest"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textViewName"
         android:orientation="horizontal">
 
         <Button
             android:id="@+id/btnRecord"
+            style="@style/button_common_blue"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_margin="@dimen/dp_2"
             android:layout_weight="1"
-            android:onClick="jumpOnClick"
             android:text="录音/停止" />
 
         <Button
             android:id="@+id/btnPlay"
+            style="@style/button_common_blue"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_margin="@dimen/dp_2"
             android:layout_weight="1"
-            android:onClick="jumpOnClick"
             android:text="播放/停止" />
     </LinearLayout>
 
@@ -48,19 +49,15 @@
         android:id="@+id/textViewName1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/IMtest"
         android:layout_marginTop="20dp"
         android:text="实时音视频 功能测试,输入房间号，点击加入房间，进入同一个房间的用户可以进行简单的音视频通话：" />
 
 
     <Button
-        android:id="@+id/avbutton"
+        android:id="@+id/brnEnterRoom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textViewName1"
-        android:layout_centerHorizontal="true"
         android:layout_marginTop="10dp"
-        android:onClick="jumpOnClick"
         android:text="加入房间" />
 
 

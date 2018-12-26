@@ -11,7 +11,6 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.reechat.videoengine.NativeVideoEngine;
@@ -24,7 +23,6 @@ import net.zhongbenshuo.wifiinterphone.activity.BaseActivity;
 import net.zhongbenshuo.wifiinterphone.adapter.VideoAdapter;
 import net.zhongbenshuo.wifiinterphone.bean.Video;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
-import net.zhongbenshuo.wifiinterphone.utils.DeviceUtil;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 import net.zhongbenshuo.wifiinterphone.widget.MyToolbar;
 
@@ -99,19 +97,6 @@ public class VideoActivity extends BaseActivity {
 
         // 初始化视频
         initVideo();
-
-        String userlist = HandleUtil.getInstance().getUserList();
-        if (userlist.length() != 0) {
-            try {
-                JSONArray userList = new JSONArray(userlist);
-                for (int i = 0; i < userList.length(); ++i) {
-                    String uuid = userList.getString(i);
-                    addSurfaceView(uuid);
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private View.OnClickListener onClickListener = (v) -> {
@@ -228,46 +213,15 @@ public class VideoActivity extends BaseActivity {
         }
     }
 
-    private void setLayoutRule(SurfaceView mSurfaceView, int index) {
-        LogUtils.d(TAG, "增加SurfaceView");
-        RelativeLayout.LayoutParams param = new RelativeLayout.LayoutParams(mWidth / 2, DeviceUtil.dp2px(this, 180));
-        int margin = DeviceUtil.dp2px(this, 2);
-        param.setMargins(margin, margin, margin, margin);
-        mSurfaceView.setId(index);
-        switch (index) {
-            case 10: {
-                param.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                param.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-                break;
-            }
-            case 11: {
-                param.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                param.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                break;
-            }
-            case 12: {
-                param.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                param.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                break;
-            }
-            case 13: {
-                param.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-                param.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
     private void addLocalSurfaceView() {
         if (!videoList.contains(new Video(username, null))) {
             LogUtils.d(TAG, "addLocalSurfaceView:" + username);
             //创建渲染窗口
             SurfaceView mSurfaceView = mNVEngine.CreateAVideoWindow(1);
-            if (mSurfaceView!=null){
-            videoList.add(new Video(username, mSurfaceView));
-            videoAdapter.notifyItemInserted(videoList.size() - 1);}
+            if (mSurfaceView != null) {
+                videoList.add(new Video(username, mSurfaceView));
+                videoAdapter.notifyItemInserted(videoList.size() - 1);
+            }
         }
     }
 
@@ -326,21 +280,35 @@ public class VideoActivity extends BaseActivity {
         mNVEngine.ObserverLocalVideoWindow(true, mSurfaceView);
         //发送本地视频
         mNVEngine.StartSendVideo();
-        addSurfaceView("");
+//        addSurfaceView("");
+
+        String userlist = HandleUtil.getInstance().getUserList();
+        if (userlist.length() != 0) {
+            try {
+                JSONArray userList = new JSONArray(userlist);
+                for (int i = 0; i < userList.length(); ++i) {
+                    String uuid = userList.getString(i).split("\"")[1];
+                    LogUtils.d(TAG, "添加用户" + uuid + "的视频");
+                    addSurfaceView(uuid);
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private EventInterface mListener = new EventInterface() {
         @Override
         public void onEventUserJoinRoom(String uid) {
             showToast(uid + "进入房间");
-            String uuid = uid.split("\\[")[1].split("\\]")[0].split("\"")[1];
+            String uuid = uid.split("\"")[1];
             if (!uuid.equals(username))
                 addSurfaceView(uuid);
         }
 
         @Override
         public void onEventUserLeaveRoom(String uid) {
-            String uuid = uid.split("\\[")[1].split("\\]")[0].split("\"")[1];
+            String uuid = uid.split("\"")[1];
             showToast(uid + "离开房间");
             removeSurfaceView(uuid);
         }

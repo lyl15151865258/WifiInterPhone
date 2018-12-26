@@ -87,7 +87,8 @@ public class HandleUtil {
                 mSDKListener.onLeaveRoom(error, dataPtr);
                 break;
             case 17:
-                //用户列表发生变化
+                //用户列表发生变化（有用户进入或退出，自己初次进入的时候也会触发）
+                userList = dataPtr;
                 break;
             case 18:
                 //有用户进入房间
