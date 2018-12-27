@@ -41,4 +41,12 @@ public class Constants {
     // 音频输出模式
     public static final int trackMode = AudioTrack.MODE_STREAM;
 
+    // WebSocket地址
+    public static final String WEBSOCKET_IP = "192.168.2.102";
+    // WebSocket端口号
+    public static final int WEBSOCKET_PORT = 50100;
+
+
+    public static final int kRoomType = 0x03 | 0x60 | 0x1800;
+
 }

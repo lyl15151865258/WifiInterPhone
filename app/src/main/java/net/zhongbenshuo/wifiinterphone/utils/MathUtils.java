@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.NumberFormat;
+import java.util.Random;
 
 /**
  * 数字转换工具类
@@ -533,5 +534,21 @@ public class MathUtils {
         } else {
             return String.valueOf(original);
         }
+    }
+
+    /**
+     * 获取n位长度的数值型字符串
+     *
+     * @param strLength 长度
+     * @return
+     */
+    public static String getRandomString(int strLength) {
+        String sourceChar = "0123456789";
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < strLength; i++) {
+            sb.append(sourceChar.charAt(random.nextInt(sourceChar.length())));
+        }
+        return sb.toString();
     }
 }

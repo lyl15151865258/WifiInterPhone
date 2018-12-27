@@ -1,6 +1,7 @@
 package net.zhongbenshuo.wifiinterphone.voice;
 
 import android.content.Context;
+import android.content.Intent;
 import android.media.MediaPlayer;
 
 import net.zhongbenshuo.wifiinterphone.bean.Music;
@@ -159,8 +160,15 @@ public class MusicPlay {
                 List<Music> musicList = musicListList.get(position).getMusicList();
                 // 如果播放次数没有达到上限，则开始播放
 //                if (musicList.get(0).getPlayCount() != musicList.get(0).getAlreadyPlayCount()) {
+                // 通知主页面刷新布局
+                Intent intent = new Intent();
+                intent.setAction("CURRENT_PLAYING");
+                intent.putExtra("number", musicList.get(counter[0]).getListNo());
+                mContext.sendBroadcast(intent);
+
                 mMediaPlayer.setDataSource(musicList.get(counter[0]).getFilePath());
                 mMediaPlayer.prepareAsync();
+                mMediaPlayer.setScreenOnWhilePlaying(true);
                 mMediaPlayer.setOnPreparedListener(mediaPlayer -> mMediaPlayer.start());
                 mMediaPlayer.setOnCompletionListener(mediaPlayer -> {
                     mediaPlayer.reset();
@@ -191,6 +199,11 @@ public class MusicPlay {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            // 播放完毕通知主页面刷新布局
+            Intent intent1 = new Intent();
+            intent1.setAction("CURRENT_PLAYING");
+            intent1.putExtra("number", -1);
+            mContext.sendBroadcast(intent1);
         }
     }
 

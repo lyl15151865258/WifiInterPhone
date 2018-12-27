@@ -6,9 +6,8 @@ import android.os.Message;
 
 import net.zhongbenshuo.wifiinterphone.constant.Command;
 import net.zhongbenshuo.wifiinterphone.constant.Constants;
-import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.network.wlan.Multicast;
-import net.zhongbenshuo.wifiinterphone.service.IntercomService;
+import net.zhongbenshuo.wifiinterphone.service.VoiceService;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 
 import java.io.IOException;
@@ -63,7 +62,7 @@ public class SignInAndOutReq extends JobHandler {
      */
     private void sendMsg2MainThread(Bundle bundle) {
         Message message = new Message();
-        message.what = IntercomService.DISCOVERING_SEND;
+        message.what = VoiceService.DISCOVERING_SEND;
         message.setData(bundle);
         handler.sendMessage(message);
     }

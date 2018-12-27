@@ -29,9 +29,9 @@ import net.zhongbenshuo.wifiinterphone.adapter.ContactsAdapter;
 import net.zhongbenshuo.wifiinterphone.bean.Contact;
 import net.zhongbenshuo.wifiinterphone.broadcast.BaseBroadcastReceiver;
 import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
-import net.zhongbenshuo.wifiinterphone.service.IIntercomCallback;
-import net.zhongbenshuo.wifiinterphone.service.IIntercomService;
-import net.zhongbenshuo.wifiinterphone.service.IntercomService;
+import net.zhongbenshuo.wifiinterphone.service.IVoiceCallback;
+import net.zhongbenshuo.wifiinterphone.service.IVoiceService;
+import net.zhongbenshuo.wifiinterphone.service.VoiceService;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 import net.zhongbenshuo.wifiinterphone.widget.RecyclerViewDivider;
@@ -57,7 +57,7 @@ public class ContactsFragment extends BaseFragment {
     private TextView tvContactCount;
     private ContactsAdapter contactsAdapter;
     private boolean sIsScrolling = false;
-    private IIntercomService intercomService;
+    private IVoiceService iVoiceService;
     private ChangeNameReceiver changeNameReceiver;
     private NetworkStatusReceiver networkStatusReceiver;
 
@@ -83,7 +83,7 @@ public class ContactsFragment extends BaseFragment {
         }
 
         contactsAdapter = new ContactsAdapter(mContext, contactList);
-        contactsAdapter.setOnItemClickListener(onItemClickListener);
+//        contactsAdapter.setOnItemClickListener(onItemClickListener);
         rvContacts.setAdapter(contactsAdapter);
         rvContacts.addOnScrollListener(onScrollListener);
 
@@ -107,8 +107,8 @@ public class ContactsFragment extends BaseFragment {
 
     @Override
     public void lazyLoad() {
-        if (intercomService == null) {
-            Intent intent = new Intent(mContext, IntercomService.class);
+        if (iVoiceService == null) {
+            Intent intent = new Intent(mContext, VoiceService.class);
             mContext.bindService(intent, serviceConnection, BIND_AUTO_CREATE);
         }
     }
@@ -158,9 +158,9 @@ public class ContactsFragment extends BaseFragment {
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            intercomService = IIntercomService.Stub.asInterface(service);
+            iVoiceService = IVoiceService.Stub.asInterface(service);
             try {
-                intercomService.registerCallback(intercomCallback);
+                iVoiceService.registerCallback(iVoiceCallback);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -169,14 +169,14 @@ public class ContactsFragment extends BaseFragment {
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            intercomService = null;
+            iVoiceService = null;
         }
     };
 
     /**
      * 被调用的方法运行在Binder线程池中，不能更新UI
      */
-    private IIntercomCallback intercomCallback = new IIntercomCallback.Stub() {
+    private IVoiceCallback iVoiceCallback = new IVoiceCallback.Stub() {
         @Override
         public void findNewUser(String ipAddress, String name) {
             sendMsg2MainThread(ipAddress, name, FOUND_NEW_USER);
@@ -456,9 +456,9 @@ public class ContactsFragment extends BaseFragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (intercomService != null && intercomService.asBinder().isBinderAlive()) {
+        if (iVoiceService != null && iVoiceService.asBinder().isBinderAlive()) {
             try {
-                intercomService.unRegisterCallback(intercomCallback);
+                iVoiceService.unRegisterCallback(iVoiceCallback);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }

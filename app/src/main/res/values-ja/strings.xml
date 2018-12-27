@@ -6,8 +6,12 @@
     <string name="ip">ネイティブIP：</string>
     <string name="contact">連絡先</string>
     <string name="malfunction">アラーム情報</string>
-    <string name="pressToSpeak">ホールドアンドトーク</string>
-    <string name="releaseFinish">リリース終了</string>
+    <string name="pressToJoinChat">チャットに参加</string>
+    <string name="releaseToExitChat">チャットを終了</string>
+    <string name="pressToSpeak">プレスアンドトーク</string>
+    <string name="releaseFinish">プレス終了</string>
+    <string name="pressToUseSpeaker">スピーカー</string>
+    <string name="releaseToUseEarpiece">イヤホン</string>
     <string name="microphonePermission">マイクの許可を与えてください</string>
     <string name="NoMoreData">データはこれ以上ありません</string>
     <string name="settings">設定</string>

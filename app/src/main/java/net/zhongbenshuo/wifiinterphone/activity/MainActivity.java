@@ -5,17 +5,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
-import android.os.IBinder;
 import android.os.Parcelable;
-import android.os.RemoteException;
 import android.os.Vibrator;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -23,24 +19,30 @@ import android.support.v4.view.ViewPager;
 import android.os.Bundle;
 import android.support.v7.content.res.AppCompatResources;
 import android.text.TextPaint;
-import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.reechat.voiceengine.EventInterface;
+import com.reechat.voiceengine.NativeVoiceEngine;
+
+import net.zhongbenshuo.wifiinterphone.activity.chat.HandleUtil;
+import net.zhongbenshuo.wifiinterphone.activity.chat.SDKListener;
 import net.zhongbenshuo.wifiinterphone.broadcast.BaseBroadcastReceiver;
 import net.zhongbenshuo.wifiinterphone.broadcast.MediaButtonReceiver;
+import net.zhongbenshuo.wifiinterphone.constant.Constants;
 import net.zhongbenshuo.wifiinterphone.constant.Permission;
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.fragment.ContactsFragment;
 import net.zhongbenshuo.wifiinterphone.fragment.MalfunctionFragment;
-import net.zhongbenshuo.wifiinterphone.service.IIntercomService;
-import net.zhongbenshuo.wifiinterphone.service.IntercomService;
 import net.zhongbenshuo.wifiinterphone.adapter.SelectModuleAdapter;
+import net.zhongbenshuo.wifiinterphone.service.VoiceService;
 import net.zhongbenshuo.wifiinterphone.utils.ActivityController;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
+import net.zhongbenshuo.wifiinterphone.utils.MathUtils;
 import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 import net.zhongbenshuo.wifiinterphone.widget.NoScrollViewPager;
 import net.zhongbenshuo.wifiinterphone.widget.dialog.CommonWarningDialog;
@@ -60,21 +62,23 @@ public class MainActivity extends BaseActivity {
 
     private static final String TAG = "MainActivity";
     private Context mContext;
-    private TextView tvSSID, tvIp, tvMessage;
+    private TextView tvSSID, tvIp, tvEnterRoom, tvMessage, tvSpeaker;
     private NoScrollViewPager mViewpager;
     private ImageView ivTitleIndicator;
+    private Button btnEnterRoom, btnSpeak, btnSpeaker;
+    private NativeVoiceEngine rtChatSdk;
+    public boolean isInRoom = false, isSpeaking = false, isUseSpeaker = false;
     private List<TextView> textViews;
     private Vibrator vibrator;
-    private IIntercomService intercomService;
     private static final int REQUEST_PERMISSION = 1;
 
     private CommonWarningDialog commonWarningDialog;
 
-    private MediaPlayer mediaPlayer;
     private AudioManager mAudioManager;
     private ComponentName mComponentName;
 
     private NetworkStatusReceiver networkStatusReceiver;
+    private KeyEventBroadcastReceiver keyEventBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,15 +94,7 @@ public class MainActivity extends BaseActivity {
             ActivityCompat.requestPermissions(this, Permission.MICROPHONE, REQUEST_PERMISSION);
         }
 
-        Intent intent = new Intent(mContext, IntercomService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent);
-        } else {
-            startService(intent);
-        }
-
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        mComponentName = new ComponentName(getPackageName(), MediaButtonReceiver.class.getName());
 
         networkStatusReceiver = new NetworkStatusReceiver();
         IntentFilter intentFilter = new IntentFilter();
@@ -107,9 +103,104 @@ public class MainActivity extends BaseActivity {
         intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(networkStatusReceiver, intentFilter);
 
+        keyEventBroadcastReceiver = new KeyEventBroadcastReceiver();
+        IntentFilter filter1 = new IntentFilter();
+        filter1.addAction("KEY_DOWN");
+        filter1.addAction("KEY_UP");
+        registerReceiver(keyEventBroadcastReceiver, filter1);
+
+        Intent intent = new Intent(mContext, VoiceService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
+
+        initReeChatSDK();
+
         // 初始化耳机按键标记
         SPHelper.save("KEY_STATUS_UP", true);
     }
+
+    /**
+     * 初始化ReeChat
+     */
+    private void initReeChatSDK() {
+        rtChatSdk = NativeVoiceEngine.getInstance();
+        rtChatSdk.register(this);
+        rtChatSdk.setDebugLogEnabled(true);
+        HandleUtil.getInstance().setListener(sdkListener);
+    }
+
+    private SDKListener sdkListener = new SDKListener() {
+        @Override
+        public void onInitSDK(int state, String errorinfo) {
+
+        }
+
+        @Override
+        public void onJoinRoom(int state, String errorinfo) {
+            String msg = "用户进入房间失败:";
+            if (state == 1) {
+                msg = "用户进入房间成功:";
+                //开关扬声器
+                rtChatSdk.UseLoudSpeaker(isUseSpeaker);
+                //本地禁音接口
+                rtChatSdk.SetSendVoice(isSpeaking);
+                //注册回调
+                rtChatSdk.registerEventHandler(mListener);
+                isInRoom = true;
+
+                showToast("您已加入了聊天");
+                tvEnterRoom.setText(getString(R.string.releaseToExitChat));
+                btnEnterRoom.setBackgroundResource(R.drawable.icon_chat_normal);
+            } else {
+                isInRoom = false;
+            }
+            LogUtils.d(TAG, msg + errorinfo);
+        }
+
+        @Override
+        public void onLeaveRoom(int state, String errorinfo) {
+            String msg = "用户离开房间失败:";
+            if (state == 1) {
+                msg = "用户离开房间成功:";
+                isInRoom = false;
+
+                showToast("您已离开了聊天");
+                tvEnterRoom.setText(getString(R.string.pressToJoinChat));
+                btnEnterRoom.setBackgroundResource(R.drawable.icon_chat_pressed);
+            } else {
+                isInRoom = true;
+            }
+            LogUtils.d(TAG, msg + errorinfo);
+        }
+
+        @Override
+        public void onNotifyUserJoinRoom(String userlist) {
+
+        }
+
+        @Override
+        public void onNotifyUserLeaveRoom(String userlist) {
+
+        }
+
+    };
+
+    private EventInterface mListener = new EventInterface() {
+        @Override
+        public void onEventUserJoinRoom(String uid) {
+            String uuid = uid.split("\"")[1];
+            LogUtils.d(TAG, uuid + "进入房间");
+        }
+
+        @Override
+        public void onEventUserLeaveRoom(String uid) {
+            String uuid = uid.split("\"")[1];
+            LogUtils.d(TAG, uuid + "离开房间");
+        }
+    };
 
     //焦点问题
     private AudioManager.OnAudioFocusChangeListener focusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
@@ -143,8 +234,16 @@ public class MainActivity extends BaseActivity {
         tvWarning.setOnClickListener(onClickListener);
         tvSSID = findViewById(R.id.tvSSID);
         tvIp = findViewById(R.id.tvIp);
+        tvEnterRoom = findViewById(R.id.tvEnterRoom);
         tvMessage = findViewById(R.id.tvMessage);
-        findViewById(R.id.btnSpeak).setOnTouchListener(onTouchListener);
+        tvSpeaker = findViewById(R.id.tvSpeaker);
+        btnEnterRoom = findViewById(R.id.btnEnterRoom);
+        btnSpeak = findViewById(R.id.btnSpeak);
+        btnSpeaker = findViewById(R.id.btnSpeaker);
+        btnEnterRoom.setOnClickListener(onClickListener);
+        btnSpeak.setOnClickListener(onClickListener);
+        btnSpeaker.setOnClickListener(onClickListener);
+
         findViewById(R.id.ivSetting).setOnClickListener(onClickListener);
 
         List<Fragment> fragments = new ArrayList<>();
@@ -226,8 +325,6 @@ public class MainActivity extends BaseActivity {
         if (WifiUtil.WifiConnected(mContext)) {
             tvSSID.setText(WifiUtil.getSSID(mContext));
             tvIp.setText(WifiUtil.getLocalIPAddress());
-            Intent intent = new Intent(mContext, IntercomService.class);
-            bindService(intent, serviceConnection, BIND_AUTO_CREATE);
         } else {
             //提示是否连接WiFi
             showConnectWifiDialog();
@@ -283,22 +380,6 @@ public class MainActivity extends BaseActivity {
         }
     }
 
-    /**
-     * onServiceConnected和onServiceDisconnected运行在UI线程中
-     */
-    private ServiceConnection serviceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            intercomService = IIntercomService.Stub.asInterface(service);
-            LogUtils.d(TAG, "绑定Service成功");
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            intercomService = null;
-        }
-    };
-
     private View.OnClickListener onClickListener = (v) -> {
         switch (v.getId()) {
             case R.id.tvContacts:
@@ -311,55 +392,55 @@ public class MainActivity extends BaseActivity {
                 // 设置
                 openActivity(SettingActivity.class);
                 break;
+            case R.id.btnEnterRoom:
+                // 进入/退出聊天
+                vibrator.vibrate(50);
+                if (isInRoom) {
+                    rtChatSdk.registerEventHandler(null);
+                    rtChatSdk.RequestQuitRoom();
+                } else {
+                    String userName = SPHelper.getString("UserName", "Not Defined");
+                    rtChatSdk.SetUserInfo(MathUtils.getRandomString(5), userName);
+                    rtChatSdk.SetRoomType(Constants.kRoomType, 4);
+                    rtChatSdk.RequestJoinRoom("ZBS");
+                }
+                break;
+            case R.id.btnSpeak:
+                // 打开/关闭麦克风
+                vibrator.vibrate(50);
+                if (isInRoom) {
+                    rtChatSdk.SetSendVoice(!isSpeaking);
+                    if (isSpeaking) {
+                        tvMessage.setText(getString(R.string.pressToSpeak));
+                        btnSpeak.setBackgroundResource(R.drawable.icon_speak_pressed);
+                    } else {
+                        tvMessage.setText(getString(R.string.releaseFinish));
+                        btnSpeak.setBackgroundResource(R.drawable.icon_speak_normal);
+                    }
+                    isSpeaking = !isSpeaking;
+                } else {
+                    showToast("您还没有进入聊天");
+                }
+                break;
+            case R.id.btnSpeaker:
+                // 使用扬声器/听筒
+                vibrator.vibrate(50);
+                if (isInRoom) {
+                    rtChatSdk.UseLoudSpeaker(!isUseSpeaker);
+                    if (isUseSpeaker) {
+                        tvSpeaker.setText(getString(R.string.pressToUseSpeaker));
+                        btnSpeaker.setBackgroundResource(R.drawable.icon_speaker_pressed);
+                    } else {
+                        tvSpeaker.setText(getString(R.string.releaseToUseEarpiece));
+                        btnSpeaker.setBackgroundResource(R.drawable.icon_speaker_normal);
+                    }
+                    isUseSpeaker = !isUseSpeaker;
+                } else {
+                    showToast("您还没有进入聊天");
+                }
+                break;
             default:
                 break;
-        }
-    };
-
-    private View.OnTouchListener onTouchListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                tvMessage.setText(getString(R.string.releaseFinish));
-                vibrator.vibrate(50);
-                if (intercomService != null) {
-                    try {
-//                        if (SPHelper.getBoolean("CANT_SPEAK", true)) {
-//                            // 被标记为不能讲话
-//                            LogUtils.d(TAG, "你现在不能讲话");
-//                            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-//                                mediaPlayer.stop();
-//                                mediaPlayer.release();
-//                                mediaPlayer = null;
-//                            }
-//                            try {
-//                                mediaPlayer = MediaPlayer.create(mContext, R.raw.dududu);
-//                                mediaPlayer.setLooping(false);
-//                                mediaPlayer.start();
-//                                mediaPlayer.setVolume(0.1f, 0.1f);
-//                            } catch (IllegalStateException e) {
-//                                e.printStackTrace();
-//                            }
-//                        } else {
-                            intercomService.startRecord();
-//                        }
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                v.performClick();
-                tvMessage.setText(getString(R.string.pressToSpeak));
-                vibrator.vibrate(50);
-                if (intercomService != null) {
-                    try {
-                        intercomService.stopRecord();
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            return false;
         }
     };
 
@@ -462,27 +543,72 @@ public class MainActivity extends BaseActivity {
         }
     }
 
+    // 按键事件广播
+    private class KeyEventBroadcastReceiver extends BaseBroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            super.onReceive(context, intent);
+            vibrator.vibrate(50);
+            if (("KEY_DOWN").equals(intent.getAction())) {
+                LogUtils.d(TAG, "收到KEY_DOWN广播");
+                if (isInRoom) {
+                    if (!isSpeaking) {
+                        rtChatSdk.SetSendVoice(true);
+                        isSpeaking = true;
+                        tvMessage.setText(getString(R.string.releaseFinish));
+                        btnSpeak.setBackgroundResource(R.drawable.icon_speak_normal);
+                    }
+                } else {
+                    showToast("您还没有进入聊天");
+                }
+            } else if (("KEY_UP").equals(intent.getAction())) {
+                LogUtils.d(TAG, "收到KEY_UP广播");
+                if (isInRoom) {
+                    if (isSpeaking) {
+                        rtChatSdk.SetSendVoice(false);
+                        isSpeaking = false;
+                        tvMessage.setText(getString(R.string.pressToSpeak));
+                        btnSpeak.setBackgroundResource(R.drawable.icon_speak_pressed);
+                    }
+                } else {
+                    showToast("您还没有进入聊天");
+                }
+            }
+        }
+    }
+
     @Override
     public void onBackPressed() {
         // 发送离开群组消息
-        try {
-            intercomService.leaveGroup();
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
+        leaveRoom();
         super.onBackPressed();
+    }
+
+    private void leaveRoom() {
+        rtChatSdk.registerEventHandler(null);
+        rtChatSdk.RequestQuitRoom();
+        if (rtChatSdk != null) {
+            rtChatSdk.stopAudioManager();
+            rtChatSdk.unRegister();
+            rtChatSdk = null;
+        }
+        ActivityController.finishActivity(this);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mAudioManager.unregisterMediaButtonEventReceiver(mComponentName);
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
+        if (rtChatSdk != null) {
+            rtChatSdk.stopAudioManager();
+            rtChatSdk.unRegister();
+            rtChatSdk = null;
         }
+        mAudioManager.unregisterMediaButtonEventReceiver(mComponentName);
         if (networkStatusReceiver != null) {
             mContext.unregisterReceiver(networkStatusReceiver);
+        }
+        if (keyEventBroadcastReceiver != null) {
+            mContext.unregisterReceiver(keyEventBroadcastReceiver);
         }
     }
 

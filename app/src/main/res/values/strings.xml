@@ -6,8 +6,12 @@
     <string name="ip">本机IP：</string>
     <string name="contact">联系人</string>
     <string name="malfunction">报警信息</string>
-    <string name="pressToSpeak">按住说话</string>
-    <string name="releaseFinish">松开结束</string>
+    <string name="pressToJoinChat">加入聊天</string>
+    <string name="releaseToExitChat">退出聊天</string>
+    <string name="pressToSpeak">按下说话</string>
+    <string name="releaseFinish">按下结束</string>
+    <string name="pressToUseSpeaker">扬声器</string>
+    <string name="releaseToUseEarpiece">听筒</string>
     <string name="microphonePermission">请授予麦克风权限</string>
     <string name="NoMoreData">没有更多的数据</string>
     <string name="settings">设置</string>

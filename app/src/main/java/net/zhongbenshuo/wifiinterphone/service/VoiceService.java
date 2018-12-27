@@ -1,58 +1,45 @@
 package net.zhongbenshuo.wifiinterphone.service;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothHeadset;
+import android.bluetooth.BluetoothProfile;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.AudioFormat;
 import android.media.AudioManager;
-import android.media.AudioRecord;
-import android.media.AudioTrack;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
-import android.media.audiofx.AcousticEchoCanceler;
-import android.media.audiofx.AutomaticGainControl;
-import android.media.audiofx.NoiseSuppressor;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.net.wifi.WifiManager;
-import android.net.wifi.WifiManager.MulticastLock;
-import android.os.Binder;
-import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
-import android.os.Parcelable;
+import android.os.Message;
+import android.os.RemoteCallbackList;
+import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.activity.MainActivity;
-import net.zhongbenshuo.wifiinterphone.bean.DataPacket;
 import net.zhongbenshuo.wifiinterphone.broadcast.BaseBroadcastReceiver;
-import net.zhongbenshuo.wifiinterphone.constant.VoiceConstant;
-import net.zhongbenshuo.wifiinterphone.speex.Speex;
-import net.zhongbenshuo.wifiinterphone.utils.ByteUtil;
+import net.zhongbenshuo.wifiinterphone.constant.Command;
+import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
+import net.zhongbenshuo.wifiinterphone.job.MulticastReceiver;
+import net.zhongbenshuo.wifiinterphone.job.MulticastSender;
+import net.zhongbenshuo.wifiinterphone.job.SignInAndOutReq;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
-import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.net.NetworkInterface;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 对讲机采集和播放语音的Service
- * Created at 2018/11/28 13:49
+ * 局域网通信服务
+ * Created at 2018/12/12 13:06
  *
  * @author LiYuliang
  * @version 1.0
@@ -60,442 +47,249 @@ import java.util.concurrent.TimeUnit;
 
 public class VoiceService extends Service {
 
-    private static final String TAG = "VoiceService";
+    private final static String TAG = "IntercomService";
 
-    private VoiceServiceBinder voiceServiceBinder = new VoiceServiceBinder();
-    private static ExecutorService executorService;
+    // 创建循环任务线程用于间隔的发送上线消息，获取局域网内其他的用户
+    private ScheduledExecutorService discoverService;
+    // 创建8个线程的固定大小线程池，分别执行DiscoverServer，以及输入、输出音频
+    private ExecutorService threadPool = Executors.newCachedThreadPool();
 
-    private MulticastLock multicastLock;
-    private InetAddress inetAddress;
+    // 加入、退出组播组消息
+    private SignInAndOutReq signInAndOutReq;
+    private MulticastSender multicastSender;
+    private MulticastReceiver multicastReceiver;
 
-    private Speex speex;
-    private int headSize = 15, frameSize;
-    private AudioRecord audioRecord;
-    private AudioTrack audioTrack;
-    private AcousticEchoCanceler acousticEchoCanceler;
-    private AutomaticGainControl automaticGainControl;
-    private NoiseSuppressor noiseSuppressor;
-    private byte[] recordReceiveBytes;
-    private boolean isRunning = true, isSending = false;
-    //定义信息头
-    private String thisDevInfo;
-    private MediaPlayer mMediaPlayer;
+    public static final int DISCOVERING_SEND = 0;
+    public static final int DISCOVERING_RECEIVE = 1;
+    public static final int DISCOVERING_LEAVE = 2;
 
-    private MulticastSocket multicastSocket;
-    private WifiReceiver wifiReceiver;
     private KeyEventBroadcastReceiver keyEventBroadcastReceiver;
+    private ChangeNameReceiver changeNameReceiver;
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        thisDevInfo = WifiUtil.getLocalIPAddress();
-        return voiceServiceBinder;
-    }
+    private MyHandler handler = new MyHandler(this);
 
-    public class VoiceServiceBinder extends Binder {
-        /**
-         * 返回SocketService 在需要的地方可以通过ServiceConnection获取到SocketService
-         *
-         * @return SocketService对象
-         */
-        public VoiceService getService() {
-            return VoiceService.this;
+    /**
+     * Service与Runnable的通信
+     */
+    private static class MyHandler extends Handler {
+
+        private VoiceService service;
+
+        private MyHandler(VoiceService service) {
+            this.service = service;
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            if (msg.what == DISCOVERING_SEND) {
+                Log.i("IntercomService", "发送消息");
+            } else if (msg.what == DISCOVERING_RECEIVE) {
+                Bundle bundle = msg.getData();
+                String address = bundle.getString("address");
+                String name = bundle.getString("name");
+                service.findNewUser(address, name);
+            } else if (msg.what == DISCOVERING_LEAVE) {
+                Bundle bundle = msg.getData();
+                String address = bundle.getString("address");
+                String name = bundle.getString("name");
+                service.removeUser(address, name);
+            }
         }
     }
+
+    private BroadcastReceiver headsetPlugReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED.equals(action)) {
+                BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+                if (BluetoothProfile.STATE_DISCONNECTED == adapter.getProfileConnectionState(BluetoothProfile.HEADSET)) {
+                    // 蓝牙耳机移除
+                    LogUtils.d(TAG, "蓝牙耳机移除");
+                }
+            } else if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(action)) {
+                // 有线耳机移除，标记耳机按键状态为抬起并发送广播，停止录音
+                Intent intent1 = new Intent();
+                intent1.setAction("KEY_UP");
+                context.sendBroadcast(intent1);
+                SPHelper.save("KEY_STATUS_UP", true);
+                LogUtils.d(TAG, "有线耳机移除");
+            }
+        }
+    };
+
+    /**
+     * 发现新的组播成员
+     *
+     * @param ipAddress IP地址
+     * @param name      用户姓名
+     */
+    private void findNewUser(String ipAddress, String name) {
+        final int size = mCallbackList.beginBroadcast();
+        for (int i = 0; i < size; i++) {
+            IVoiceCallback callback = mCallbackList.getBroadcastItem(i);
+            if (callback != null) {
+                try {
+                    callback.findNewUser(ipAddress, name);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mCallbackList.finishBroadcast();
+    }
+
+    /**
+     * 删除用户显示
+     *
+     * @param ipAddress IP地址
+     * @param name      用户姓名
+     */
+    private void removeUser(String ipAddress, String name) {
+        final int size = mCallbackList.beginBroadcast();
+        for (int i = 0; i < size; i++) {
+            IVoiceCallback callback = mCallbackList.getBroadcastItem(i);
+            if (callback != null) {
+                try {
+                    callback.removeUser(ipAddress, name);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        mCallbackList.finishBroadcast();
+    }
+
+    private RemoteCallbackList<IVoiceCallback> mCallbackList = new RemoteCallbackList<>();
+
+    public IVoiceService.Stub mBinder = new IVoiceService.Stub() {
+        @Override
+        public void startRecord() throws RemoteException {
+            // 开始录音
+
+        }
+
+        @Override
+        public void stopRecord() throws RemoteException {
+            // 结束录音
+
+        }
+
+        @Override
+        public void leaveGroup() throws RemoteException {
+            // 发送离线消息
+            signInAndOutReq.setCommand(Command.DISC_LEAVE);
+            threadPool.execute(signInAndOutReq);
+        }
+
+        @Override
+        public void registerCallback(IVoiceCallback callback) throws RemoteException {
+            mCallbackList.register(callback);
+        }
+
+        @Override
+        public void unRegisterCallback(IVoiceCallback callback) throws RemoteException {
+            mCallbackList.unregister(callback);
+        }
+    };
 
     @Override
     public void onCreate() {
         super.onCreate();
-        executorService = new ThreadPoolExecutor(5, 10, 60, TimeUnit.SECONDS,
-                new SynchronousQueue<>(), (r) -> {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            return thread;
-        });
-        // 初始化Speex
-        initSpeex();
+        initThread();
 
-        // 初始化声音采集和声音播放
-        initAudioRecord();
-        initAudioTrack();
+        keyEventBroadcastReceiver = new KeyEventBroadcastReceiver();
+        IntentFilter filter1 = new IntentFilter();
+        filter1.addAction("KEY_DOWN");
+        filter1.addAction("KEY_UP");
+        registerReceiver(keyEventBroadcastReceiver, filter1);
 
-        // 初始化Android自带的回声消除、自动增益控制、噪声抑制器
-        setAec();
-        setAGC();
-        setNC();
+        changeNameReceiver = new ChangeNameReceiver();
+        IntentFilter filter2 = new IntentFilter();
+        filter2.addAction("CHANGE_NAME");
+        registerReceiver(changeNameReceiver, filter2);
 
-        // 获取组播锁
-        openMulticastLock();
+        IntentFilter filter3 = new IntentFilter();
+        filter3.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
+        filter3.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        registerReceiver(headsetPlugReceiver, filter3);
 
-        // 显示一个前台Notification
         showNotification();
+    }
 
-        // 播放无声音乐
-        mMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.silent);
-        mMediaPlayer.setLooping(true);
-        mMediaPlayer.start();
+    /**
+     * 开启多线程任务
+     */
+    private void initThread() {
+        // 开启发送自身信息的线程
+        initDiscoverThread();
+        // 初始化JobHandler
+        initJobHandler();
+    }
 
+    /**
+     * 开启发现线程
+     */
+    private void initDiscoverThread() {
+        if (signInAndOutReq != null) {
+            signInAndOutReq = null;
+        }
+        if (discoverService != null) {
+            discoverService.shutdown();
+            discoverService = null;
+        }
+        discoverService = Executors.newScheduledThreadPool(1);
+        // 初始化探测线程
+        signInAndOutReq = new SignInAndOutReq(handler);
+        signInAndOutReq.setCommand(Command.DISC_REQUEST + "," + SPHelper.getString("UserName", "Not Defined"));
+        // 启动探测局域网内其余用户的线程（每5秒扫描一次）
+        discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 5, TimeUnit.SECONDS);
+    }
 
-        registerBroadcastReceiver();
+    /**
+     * 初始化JobHandler
+     */
+    private void initJobHandler() {
+        // 初始化音频输入节点
+        multicastSender = new MulticastSender(handler);
+        multicastReceiver = new MulticastReceiver(handler);
+        // 开启音频输入、输出
+        threadPool.execute(multicastSender);
+        threadPool.execute(multicastReceiver);
     }
 
     /**
      * 前台Service
      */
     private void showNotification() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("voice_service", getString(R.string.app_name), NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("局域网对讲机常驻服务");
-            NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            notificationManager.createNotificationChannel(channel);
-            Intent intent = new Intent(this, MainActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-            Notification notification = new NotificationCompat.Builder(this, "voice_service")
-                    .setContentTitle(getString(R.string.app_name))
-                    .setContentText(getString(R.string.working))
-                    .setWhen(System.currentTimeMillis())
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
-                    .setContentIntent(pendingIntent)
-                    .build();
-            startForeground(VoiceConstant.NOTICE_ID, notification);
-        } else {
-            Intent intent = new Intent(this, MainActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-            Notification notification = new NotificationCompat.Builder(getApplicationContext(), "voice_service")
-                    .setContentTitle(getString(R.string.app_name))
-                    .setTicker(getString(R.string.app_name))
-                    .setContentText(getString(R.string.working))
-                    .setSmallIcon(R.drawable.base_app_icon)
-                    .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
-                    .setContentIntent(pendingIntent)
-                    .setOngoing(true).build();
-            startForeground(VoiceConstant.NOTICE_ID, notification);
-        }
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+//        notificationIntent.setAction(Command.MAIN_ACTION);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+        Notification notification = new NotificationCompat.Builder(getApplicationContext())
+                .setContentTitle("对讲机")
+                .setTicker("对讲机")
+                .setContentText("正在使用对讲机")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setLargeIcon(Bitmap.createScaledBitmap(icon, 128, 128, false))
+                .setContentIntent(pendingIntent)
+                .setOngoing(true).build();
+
+        startForeground(Command.FOREGROUND_SERVICE, notification);
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return mBinder;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        thisDevInfo = WifiUtil.getLocalIPAddress();
-        try {
-            inetAddress = InetAddress.getByName(VoiceConstant.BROADCAST_IP);
-            multicastSocket = new MulticastSocket(VoiceConstant.BROADCAST_PORT);
-            multicastSocket.setNetworkInterface(NetworkInterface.getByName("wlan0"));
-            // setTimeToLive(int ttl)
-            // 当ttl为0时，指定数据报应停留在本地主机
-            // 为1时，指定数据报发送到本地局域网
-            // 为32时，发送到本站点的网络上
-            // 为64时，发送到本地区
-            // 128时，发送到本大洲
-            // 255为全球
-            if (multicastLock.isHeld()) {
-                // 加入组播
-                multicastSocket.setTimeToLive(32);
-                multicastSocket.joinGroup(inetAddress);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        startSendVoiceThread();
-        startReceiveVoiceThread();
-        // 如果Service被终止
-        // 当资源允许情况下，重启service
-        return START_STICKY;
-    }
-
-    private void initSpeex() {
-        speex = Speex.getInstance();
-        frameSize = speex.getFrameSize();
-        recordReceiveBytes = new byte[headSize + frameSize];
-    }
-
-    private void initAudioRecord() {
-        //获取录制缓存大小
-        int recordBufferSize = AudioRecord.getMinBufferSize(
-                VoiceConstant.FREQUENCY,                           //采样率
-                AudioFormat.CHANNEL_IN_MONO,                       //采样通道数,此处单声道
-                VoiceConstant.ENCODING                             //采样输出格式
-        );
-        //初始化录音对象
-        //AudioSource.CAMCORDER                               同方向的相机麦克风，若没有内置相机或无法识别，则使用预设的麦克风
-        //MediaRecorder.AudioSource.DEFAULT                   默认音频来源
-        //MediaRecorder.AudioSource.MIC                       主麦克风
-        //MediaRecorder.AudioSource.VOICE_CALL                语音拨出的语音与对方说话的声音
-        //MediaRecorder.AudioSource.VOICE_COMMUNICATION       摄像头旁边的麦克风
-        //MediaRecorder.AudioSource.VOICE_DOWNLINK            下行声音
-        //MediaRecorder.AudioSource.VOICE_RECOGNITION         语音识别
-        //MediaRecorder.AudioSource.VOICE_UPLINK              上行声音
-        audioRecord = new AudioRecord(
-                MediaRecorder.AudioSource.VOICE_COMMUNICATION,      //音源,此处为主麦克风
-                VoiceConstant.FREQUENCY,                            //采样率
-                AudioFormat.CHANNEL_IN_MONO,                        //采样通道数
-                VoiceConstant.ENCODING,                             //采样输出格式
-                recordBufferSize                                    //上述求得录制最小缓存
-        );
-    }
-
-    private void initAudioTrack() {
-        // 播放器
-        int playerBufferSize = AudioTrack.getMinBufferSize(
-                VoiceConstant.FREQUENCY,
-                AudioFormat.CHANNEL_OUT_MONO,
-                VoiceConstant.ENCODING);
-        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-                VoiceConstant.FREQUENCY,
-                AudioFormat.CHANNEL_OUT_MONO,
-                VoiceConstant.ENCODING,
-                playerBufferSize,
-                AudioTrack.MODE_STREAM
-        );
-    }
-
-    //回声消除AEC
-    public void setAec() {
-        acousticEchoCanceler = AcousticEchoCanceler.create(audioRecord.getAudioSessionId());
-        //判断设备是否支持回声消除(AEC)
-        boolean isAec = AcousticEchoCanceler.isAvailable();
-        LogUtils.d(TAG, "是否支持回声消除(AEC) ========== " + isAec);
-
-        if (isAec && hasMicrophone()) {
-            try {
-                acousticEchoCanceler.setEnabled(true);//打开AEC
-                LogUtils.d(TAG, "AEC is Enable");
-            } catch (IllegalStateException e) {
-                LogUtils.d(TAG, "setEnabled() in wrong state");
-            }
-        }
-    }
-
-    //自动增益控制(AGC)
-    public void setAGC() {
-        automaticGainControl = AutomaticGainControl.create(audioRecord.getAudioSessionId());
-        //判断设备是否支持自动增益控制(AEC)
-        boolean isAvailable = AutomaticGainControl.isAvailable();
-        LogUtils.d(TAG, "是否支持自动增益控制(AGC) ========== " + isAvailable);
-
-        if (isAvailable && hasMicrophone()) {
-            try {
-                automaticGainControl.setEnabled(true);
-                LogUtils.d(TAG, "AGC is Enable");
-            } catch (IllegalStateException e) {
-                LogUtils.d(TAG, "setEnabled() in wrong state");
-            }
-        }
-    }
-
-    //噪声抑制器(NC)
-    public void setNC() {
-        boolean isAvailable = NoiseSuppressor.isAvailable();
-        LogUtils.d(TAG, "是否支持噪声抑制器(NC) ========== " + isAvailable);
-
-        noiseSuppressor = NoiseSuppressor.create(audioRecord.getAudioSessionId());
-
-        if (isAvailable && hasMicrophone()) {
-            try {
-                noiseSuppressor.setEnabled(true);
-                LogUtils.d(TAG, "AGC is Enable");
-            } catch (IllegalStateException e) {
-                LogUtils.d(TAG, "setEnabled() in wrong state");
-            }
-        }
-    }
-
-    private boolean hasMicrophone() {
-        return this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE);
-    }
-
-    private void openMulticastLock() {
-        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        multicastLock = wifiManager.createMulticastLock("VoiceService");
-        multicastLock.acquire();
-    }
-
-    private void startSendVoiceThread() {
-        isRunning = true;
-        Runnable sendVoiceRunnable = () -> {
-            short[] audioData = new short[frameSize];
-            while (isRunning) {
-                if (isSending && WifiUtil.WifiConnected(VoiceService.this)) {
-                    audioRecord.startRecording();
-                    // 获取音频数据
-                    byte[] encoded = new byte[frameSize];
-                    int number = audioRecord.read(audioData, 0, frameSize);
-                    // 获取有效长度并编码
-                    short[] dst = Arrays.copyOfRange(audioData, 0, number);
-                    int totalByte = speex.encode(dst, 0, encoded, number);
-                    // 获取编码后的有效长度
-                    byte[] result = Arrays.copyOfRange(encoded, 0, totalByte);
-
-                    LogUtils.d(TAG, "编码成功，字节数组长度 = " + totalByte + "，设备信息长度：" + thisDevInfo.getBytes().length + "，result长度：" + result.length);
-
-                    if (totalByte > 0) {
-                        //构建数据包
-                        DataPacket dataPacket = new DataPacket(headSize, totalByte, thisDevInfo.getBytes(), result);
-                        //构建数据报文
-                        DatagramPacket sendPacket = new DatagramPacket(
-                                dataPacket.getAllData(),
-                                dataPacket.getAllData().length,
-                                inetAddress,
-                                VoiceConstant.BROADCAST_PORT);
-                        LogUtils.d(TAG, "构建数据报文成功,发送的音频长度为：" + dataPacket.getAllData().length);
-
-                        // 发送并关闭录制
-                        try {
-                            multicastSocket.send(sendPacket);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        LogUtils.d(TAG, "发送语音");
-                    } else {
-                        LogUtils.d(TAG, "编码失败");
-                    }
-                }
-            }
-            multicastSocket.close();
-        };
-        executorService.submit(sendVoiceRunnable);
-    }
-
-    private void startReceiveVoiceThread() {
-        isRunning = true;
-        Runnable receiveVoiceRunnable = () -> {
-            try {
-                DatagramPacket receivePacket = new DatagramPacket(recordReceiveBytes, headSize + frameSize, inetAddress, VoiceConstant.BROADCAST_PORT);
-                while (isRunning) {
-                    if (!isSending && WifiUtil.WifiConnected(VoiceService.this)) {
-                        try {
-                            multicastSocket.receive(receivePacket);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            continue;
-                        }
-                        byte[] data = receivePacket.getData();
-                        // 获得包头
-                        byte[] head = Arrays.copyOf(data, headSize);
-                        // 获得包体长度
-                        byte[] bodyLength = Arrays.copyOfRange(data, headSize, headSize + 4);
-                        // 获得包体
-                        byte[] body = Arrays.copyOfRange(data, headSize + 4, headSize + 4 + ByteUtil.byteArrayToInt(bodyLength, 0));
-                        // 获得头信息 通过头信息判断是否是自己发出的语音
-                        String remoteDeviceInfo = new String(head).trim();
-                        LogUtils.d(TAG, "收到来自:" + remoteDeviceInfo + "的语音");
-                        if (!remoteDeviceInfo.equals(thisDevInfo)) {
-                            short[] lin = new short[frameSize];
-                            int size = speex.decode(body, lin, body.length);
-                            if (size > 0) {
-                                audioTrack.write(lin, 0, size);
-                                audioTrack.setStereoVolume(1f, 1f);// 设置当前音量大小
-                                audioTrack.play();
-                            }
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        };
-        executorService.submit(receiveVoiceRunnable);
-    }
-
-    public void setIsSending(boolean isSending) {
-        this.isSending = isSending;
-    }
-
-    /**
-     * 释放资源
-     */
-    private void release() {
-        isRunning = false;
-        if (audioRecord != null) {
-            audioRecord.stop();
-            audioRecord.release();
-        }
-        if (audioTrack != null) {
-            audioTrack.stop();
-            audioTrack.release();
-        }
-        if (acousticEchoCanceler != null) {
-            acousticEchoCanceler.release();
-        }
-        if (automaticGainControl != null) {
-            automaticGainControl.release();
-        }
-        if (noiseSuppressor != null) {
-            noiseSuppressor.release();
-        }
-        if (speex != null) {
-            speex.close();
-        }
-        if (multicastLock != null && multicastLock.isHeld()) {
-            multicastLock.release();
-        }
-    }
-
-    public class WifiReceiver extends BaseBroadcastReceiver {
-
-        private static final String TAG = "WifiReceiver";
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(intent.getAction())) {
-                //拿到wifi的状态值
-                int wifiState = intent.getIntExtra(WifiManager.EXTRA_NEW_STATE, 0);
-                LogUtils.d(TAG, "wifiState = " + wifiState);
-                switch (wifiState) {
-                    case WifiManager.WIFI_STATE_DISABLED:
-                        break;
-                    case WifiManager.WIFI_STATE_DISABLING:
-                        break;
-                    default:
-                        break;
-                }
-            }
-            //监听wifi的连接状态即是否连接的一个有效的无线路由
-            if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(intent.getAction())) {
-                Parcelable parcelableExtra = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-                if (parcelableExtra != null) {
-                    // 获取联网状态的NetWorkInfo对象
-                    NetworkInfo networkInfo = (NetworkInfo) parcelableExtra;
-                    //获取的State对象则代表着连接成功与否等状态
-                    NetworkInfo.State state = networkInfo.getState();
-                    //判断网络是否已经连接
-                    boolean isConnected = state == NetworkInfo.State.CONNECTED;
-                    LogUtils.d(TAG, "isConnected:" + isConnected);
-                    if (isConnected) {
-
-                    } else {
-
-                    }
-                }
-            }
-
-            // 监听网络连接，包括wifi和移动数据的打开和关闭,以及连接上可用的连接都会接到监听
-            if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
-                //获取联网状态的NetworkInfo对象
-                NetworkInfo info = intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
-                if (info != null) {
-                    //如果当前的网络连接成功并且网络连接可用
-                    if (NetworkInfo.State.CONNECTED == info.getState() && info.isAvailable()) {
-                        if (info.getType() == ConnectivityManager.TYPE_WIFI || info.getType() == ConnectivityManager.TYPE_MOBILE) {
-                            LogUtils.d(TAG, getConnectionType(info.getType()) + "连上");
-                            thisDevInfo = WifiUtil.getLocalIPAddress();
-                        }
-                    } else {
-                        LogUtils.d(TAG, getConnectionType(info.getType()) + "断开");
-                    }
-                }
-            }
-        }
-
-        private String getConnectionType(int type) {
-            String connType = "";
-            if (type == ConnectivityManager.TYPE_MOBILE) {
-                connType = "3G网络数据";
-            } else if (type == ConnectivityManager.TYPE_WIFI) {
-                connType = "WIFI网络";
-            }
-            return connType;
-        }
+        Log.d("IntercomService", "onStartCommand");
+        return super.onStartCommand(intent, flags, startId);
     }
 
     // 按键事件广播
@@ -505,61 +299,60 @@ public class VoiceService extends Service {
             super.onReceive(context, intent);
             if (("KEY_DOWN").equals(intent.getAction())) {
                 LogUtils.d(TAG, "收到KEY_DOWN广播");
-                setIsSending(true);
+                try {
+                    mBinder.startRecord();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
             } else if (("KEY_UP").equals(intent.getAction())) {
                 LogUtils.d(TAG, "收到KEY_UP广播");
-                setIsSending(false);
+                try {
+                    mBinder.stopRecord();
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
 
-    /**
-     * 注册广播
-     */
-    private void registerBroadcastReceiver() {
-        wifiReceiver = new WifiReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
-        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-        filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(wifiReceiver, filter);
-
-        keyEventBroadcastReceiver = new KeyEventBroadcastReceiver();
-        IntentFilter filter1 = new IntentFilter();
-        filter1.addAction("KEY_DOWN");
-        filter1.addAction("KEY_UP");
-        registerReceiver(keyEventBroadcastReceiver, filter1);
+    // 修改姓名收到的广播
+    public class ChangeNameReceiver extends BaseBroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("CHANGE_NAME".equals(intent.getAction())) {
+                initDiscoverThread();
+            }
+        }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-
-        isRunning = false;
-        executorService.shutdown();
-        release();
-
-        if (mMediaPlayer != null) {
-            mMediaPlayer.stop();
-        }
-
-        if (wifiReceiver != null) {
-            unregisterReceiver(wifiReceiver);
-        }
-
+        // 释放资源
+        free();
         if (keyEventBroadcastReceiver != null) {
             unregisterReceiver(keyEventBroadcastReceiver);
         }
-
+        if (changeNameReceiver != null) {
+            unregisterReceiver(changeNameReceiver);
+        }
+        if (headsetPlugReceiver != null) {
+            unregisterReceiver(headsetPlugReceiver);
+        }
+        // 停止前台Service
         stopForeground(true);
+        stopSelf();
+    }
 
-        // 如果Service被杀死，干掉通知
-        NotificationManager mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        mManager.cancel(VoiceConstant.NOTICE_ID);
-
-        // 重启自己
-        Intent intent = new Intent(getApplicationContext(), VoiceService.class);
-        startService(intent);
+    /**
+     * 释放系统资源
+     */
+    private void free() {
+        // 释放线程资源
+        multicastSender.free();
+        multicastReceiver.free();
+        // 释放线程池
+        discoverService.shutdown();
+        threadPool.shutdown();
     }
 }

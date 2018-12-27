@@ -20,6 +20,7 @@ import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.adapter.MalfunctionAdapter;
 import net.zhongbenshuo.wifiinterphone.bean.WebSocketData;
 import net.zhongbenshuo.wifiinterphone.broadcast.BaseBroadcastReceiver;
+import net.zhongbenshuo.wifiinterphone.constant.Constants;
 import net.zhongbenshuo.wifiinterphone.service.WebSocketService;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 import net.zhongbenshuo.wifiinterphone.widget.xrecyclerview.ProgressStyle;
@@ -93,13 +94,14 @@ public class MalfunctionFragment extends BaseFragment {
         rvMalfunction.addOnScrollListener(onScrollListener);
 
         Intent intent = new Intent(mContext, WebSocketService.class);
-        intent.putExtra("ServerHost", "192.168.2.102");
-        intent.putExtra("WebSocketPort", "50100");
+        intent.putExtra("ServerHost", Constants.WEBSOCKET_IP);
+        intent.putExtra("WebSocketPort", String.valueOf(Constants.WEBSOCKET_PORT));
         mContext.startService(intent);
 
         myReceiver = new MyReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("RECEIVE_MALFUNCTION");
+        intentFilter.addAction("CURRENT_PLAYING");
         mContext.registerReceiver(myReceiver, intentFilter);
 
         return view;
@@ -172,6 +174,24 @@ public class MalfunctionFragment extends BaseFragment {
                         WebSocketData socketMsg = webSocketMsgIterator.next();
                         if (socketMsg.getListNo() == webSocketData.getListNo()) {
                             webSocketMsgIterator.remove();
+                        }
+                    }
+                    malfunctionAdapter.notifyDataSetChanged();
+                }
+            }
+            if ("CURRENT_PLAYING".equals(intent.getAction())) {
+                int listNo = intent.getIntExtra("number", -1);
+                if (listNo == -1) {
+                    for (int i = 0; i < malfunctionList.size(); i++) {
+                        malfunctionList.get(i).setPalying(false);
+                    }
+                    malfunctionAdapter.notifyDataSetChanged();
+                } else {
+                    for (int i = 0; i < malfunctionList.size(); i++) {
+                        if (listNo == malfunctionList.get(i).getListNo()) {
+                            malfunctionList.get(i).setPalying(true);
+                        } else {
+                            malfunctionList.get(i).setPalying(false);
                         }
                     }
                     malfunctionAdapter.notifyDataSetChanged();

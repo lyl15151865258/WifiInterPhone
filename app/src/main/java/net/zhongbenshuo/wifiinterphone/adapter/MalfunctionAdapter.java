@@ -7,15 +7,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 
 import net.zhongbenshuo.wifiinterphone.R;
 import net.zhongbenshuo.wifiinterphone.bean.WebSocketData;
-import net.zhongbenshuo.wifiinterphone.constant.NetWork;
 
 import java.util.List;
 
@@ -51,19 +46,11 @@ public class MalfunctionAdapter extends RecyclerView.Adapter {
         holder.tvMalfunctionType.setText(malfunction.getText());
         holder.tvMalfunctionTime.setText(malfunction.getTime());
 
-        holder.tvMalfunctionType.setTextColor(malfunction.getForeColor());
-        holder.tvMalfunctionTime.setTextColor(malfunction.getForeColor());
-        holder.llRoot.setBackgroundColor(malfunction.getBackColor());
-
-        String userIconUrl = "";
-        if (userIconUrl != null && !userIconUrl.isEmpty()) {
-            String headIconUrl = "http://" + NetWork.SERVER_HOST_MAIN + ":" + NetWork.SERVER_PORT_MAIN + "/" + userIconUrl.replace("\\", "/");
-            // 加载头像
-            RequestOptions options = new RequestOptions()
-                    .error(R.drawable.photo_user)
-                    .placeholder(R.drawable.photo_user)
-                    .dontAnimate();
-            Glide.with(mContext).load(headIconUrl).apply(options).into(holder.ivMalfunctionIcon);
+        holder.ivBack.setColorFilter(malfunction.getBackColor());
+        if (malfunction.isPalying()) {
+            holder.ivSpeaker.setVisibility(View.VISIBLE);
+        } else {
+            holder.ivSpeaker.setVisibility(View.GONE);
         }
 
         holder.itemView.setOnClickListener((v) -> {
@@ -79,14 +66,13 @@ public class MalfunctionAdapter extends RecyclerView.Adapter {
     }
 
     private class NewsViewHolder extends RecyclerView.ViewHolder {
-        private LinearLayout llRoot;
         private TextView tvMalfunctionType, tvMalfunctionTime;
-        private ImageView ivMalfunctionIcon;
+        private ImageView ivBack, ivSpeaker;
 
         private NewsViewHolder(View itemView) {
             super(itemView);
-            llRoot = itemView.findViewById(R.id.llRoot);
-            ivMalfunctionIcon = itemView.findViewById(R.id.ivMalfunctionIcon);
+            ivBack = itemView.findViewById(R.id.ivBack);
+            ivSpeaker = itemView.findViewById(R.id.ivSpeaker);
             tvMalfunctionType = itemView.findViewById(R.id.tvMalfunctionType);
             tvMalfunctionTime = itemView.findViewById(R.id.tvMalfunctionTime);
         }

@@ -6,8 +6,12 @@
     <string name="ip">Local IP：</string>
     <string name="contact">Contact</string>
     <string name="malfunction">Malfunction</string>
+    <string name="pressToJoinChat">Join chat</string>
+    <string name="releaseToExitChat">Exit chat</string>
     <string name="pressToSpeak">Press and talk</string>
-    <string name="releaseFinish">Release finish</string>
+    <string name="releaseFinish">Press end</string>
+    <string name="pressToUseSpeaker">Speaker</string>
+    <string name="releaseToUseEarpiece">Earpiece</string>
     <string name="microphonePermission">Please grant microphone permission</string>
     <string name="NoMoreData">No more data.</string>
     <string name="settings">Settings</string>

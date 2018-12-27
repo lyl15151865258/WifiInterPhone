@@ -8,16 +8,32 @@
     android:orientation="horizontal"
     android:padding="@dimen/dp_10">
 
-    <de.hdodenhof.circleimageview.CircleImageView
-        android:id="@+id/ivMalfunctionIcon"
-        android:layout_width="@dimen/dp_50"
-        android:layout_height="@dimen/dp_50"
-        android:src="@mipmap/ic_launcher"
-        android:visibility="gone" />
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/ivBack"
+            android:layout_width="@dimen/dp_48"
+            android:layout_height="@dimen/dp_48"
+            android:contentDescription="@null"
+            android:src="@color/black" />
+
+        <ImageView
+            android:id="@+id/ivSpeaker"
+            android:layout_width="@dimen/dp_48"
+            android:layout_height="@dimen/dp_48"
+            android:contentDescription="@null"
+            android:padding="@dimen/dp_10"
+            android:src="@drawable/speaker"
+            android:visibility="gone" />
+
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/dp_10"
         android:orientation="vertical">
 
         <TextView

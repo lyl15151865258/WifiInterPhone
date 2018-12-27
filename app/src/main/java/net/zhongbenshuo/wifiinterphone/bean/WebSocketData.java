@@ -26,6 +26,8 @@ public class WebSocketData implements Serializable {
     private int VoiceInterval1;
     private int VoiceInterval2;
 
+    private boolean isPalying = false;
+
     public int getBackColor() {
         return BackColor;
     }
@@ -120,5 +122,13 @@ public class WebSocketData implements Serializable {
 
     public void setVoiceInterval2(int voiceInterval2) {
         VoiceInterval2 = voiceInterval2;
+    }
+
+    public boolean isPalying() {
+        return isPalying;
+    }
+
+    public void setPalying(boolean palying) {
+        isPalying = palying;
     }
 }

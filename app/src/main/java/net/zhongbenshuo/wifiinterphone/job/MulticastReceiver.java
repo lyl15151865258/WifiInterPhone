@@ -10,7 +10,7 @@ import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
 import net.zhongbenshuo.wifiinterphone.data.AudioData;
 import net.zhongbenshuo.wifiinterphone.data.MessageQueue;
 import net.zhongbenshuo.wifiinterphone.network.wlan.Multicast;
-import net.zhongbenshuo.wifiinterphone.service.IntercomService;
+import net.zhongbenshuo.wifiinterphone.service.VoiceService;
 import net.zhongbenshuo.wifiinterphone.speex.Speex;
 import net.zhongbenshuo.wifiinterphone.utils.LogUtils;
 import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
@@ -78,15 +78,15 @@ public class MulticastReceiver extends JobHandler {
             }
             String name = content.split(",")[1];
             // 发送Handler消息
-            sendMsg2MainThread(packet.getAddress().toString(), name, IntercomService.DISCOVERING_RECEIVE);
+            sendMsg2MainThread(packet.getAddress().toString(), name, VoiceService.DISCOVERING_RECEIVE);
         } else if (content.startsWith(Command.DISC_RESPONSE) &&
                 !packet.getAddress().toString().equals("/" + WifiUtil.getLocalIPAddress())) {
             String name = content.split(",")[1];
             // 发送Handler消息
-            sendMsg2MainThread(packet.getAddress().toString(), name, IntercomService.DISCOVERING_RECEIVE);
+            sendMsg2MainThread(packet.getAddress().toString(), name, VoiceService.DISCOVERING_RECEIVE);
         } else if (content.startsWith(Command.DISC_LEAVE) &&
                 !packet.getAddress().toString().equals("/" + WifiUtil.getLocalIPAddress())) {
-            sendMsg2MainThread(packet.getAddress().toString(), "", IntercomService.DISCOVERING_LEAVE);
+            sendMsg2MainThread(packet.getAddress().toString(), "", VoiceService.DISCOVERING_LEAVE);
         }
     }
 
