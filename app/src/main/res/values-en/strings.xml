@@ -12,6 +12,9 @@
     <string name="releaseFinish">Press end</string>
     <string name="pressToUseSpeaker">Speaker</string>
     <string name="releaseToUseEarpiece">Earpiece</string>
+    <string name="InChatRoom">You have joined the chat room</string>
+    <string name="ExitChatRoom">You have left the chat room</string>
+    <string name="OutChatRoom">You have not entered the chat room yet</string>
     <string name="microphonePermission">Please grant microphone permission</string>
     <string name="NoMoreData">No more data.</string>
     <string name="settings">Settings</string>

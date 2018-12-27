@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
@@ -76,6 +77,7 @@ public class MainActivity extends BaseActivity {
 
     private AudioManager mAudioManager;
     private ComponentName mComponentName;
+    private MediaPlayer mediaPlayer;
 
     private NetworkStatusReceiver networkStatusReceiver;
     private KeyEventBroadcastReceiver keyEventBroadcastReceiver;
@@ -151,7 +153,7 @@ public class MainActivity extends BaseActivity {
                 rtChatSdk.registerEventHandler(mListener);
                 isInRoom = true;
 
-                showToast("您已加入了聊天");
+                showToast(getString(R.string.InChatRoom));
                 tvEnterRoom.setText(getString(R.string.releaseToExitChat));
                 btnEnterRoom.setBackgroundResource(R.drawable.icon_chat_normal);
             } else {
@@ -162,18 +164,7 @@ public class MainActivity extends BaseActivity {
 
         @Override
         public void onLeaveRoom(int state, String errorinfo) {
-            String msg = "用户离开房间失败:";
-            if (state == 1) {
-                msg = "用户离开房间成功:";
-                isInRoom = false;
 
-                showToast("您已离开了聊天");
-                tvEnterRoom.setText(getString(R.string.pressToJoinChat));
-                btnEnterRoom.setBackgroundResource(R.drawable.icon_chat_pressed);
-            } else {
-                isInRoom = true;
-            }
-            LogUtils.d(TAG, msg + errorinfo);
         }
 
         @Override
@@ -398,6 +389,10 @@ public class MainActivity extends BaseActivity {
                 if (isInRoom) {
                     rtChatSdk.registerEventHandler(null);
                     rtChatSdk.RequestQuitRoom();
+                    isInRoom = false;
+                    showToast(getString(R.string.ExitChatRoom));
+                    tvEnterRoom.setText(getString(R.string.pressToJoinChat));
+                    btnEnterRoom.setBackgroundResource(R.drawable.icon_chat_pressed);
                 } else {
                     String userName = SPHelper.getString("UserName", "Not Defined");
                     rtChatSdk.SetUserInfo(MathUtils.getRandomString(5), userName);
@@ -409,17 +404,25 @@ public class MainActivity extends BaseActivity {
                 // 打开/关闭麦克风
                 vibrator.vibrate(50);
                 if (isInRoom) {
-                    rtChatSdk.SetSendVoice(!isSpeaking);
                     if (isSpeaking) {
+                        mediaPlayer = MediaPlayer.create(mContext, R.raw.dingdong);
+                        mediaPlayer.setLooping(false);
+                        mediaPlayer.start();
+                        rtChatSdk.SetSendVoice(false);
+                        isSpeaking = false;
                         tvMessage.setText(getString(R.string.pressToSpeak));
                         btnSpeak.setBackgroundResource(R.drawable.icon_speak_pressed);
                     } else {
+                        mediaPlayer = MediaPlayer.create(mContext, R.raw.du);
+                        mediaPlayer.setLooping(false);
+                        mediaPlayer.start();
+                        rtChatSdk.SetSendVoice(true);
+                        isSpeaking = true;
                         tvMessage.setText(getString(R.string.releaseFinish));
                         btnSpeak.setBackgroundResource(R.drawable.icon_speak_normal);
                     }
-                    isSpeaking = !isSpeaking;
                 } else {
-                    showToast("您还没有进入聊天");
+                    showToast(getString(R.string.OutChatRoom));
                 }
                 break;
             case R.id.btnSpeaker:
@@ -436,7 +439,7 @@ public class MainActivity extends BaseActivity {
                     }
                     isUseSpeaker = !isUseSpeaker;
                 } else {
-                    showToast("您还没有进入聊天");
+                    showToast(getString(R.string.OutChatRoom));
                 }
                 break;
             default:
@@ -553,35 +556,34 @@ public class MainActivity extends BaseActivity {
                 LogUtils.d(TAG, "收到KEY_DOWN广播");
                 if (isInRoom) {
                     if (!isSpeaking) {
+                        mediaPlayer = MediaPlayer.create(mContext, R.raw.dingdong);
+                        mediaPlayer.setLooping(false);
+                        mediaPlayer.start();
                         rtChatSdk.SetSendVoice(true);
                         isSpeaking = true;
                         tvMessage.setText(getString(R.string.releaseFinish));
                         btnSpeak.setBackgroundResource(R.drawable.icon_speak_normal);
                     }
                 } else {
-                    showToast("您还没有进入聊天");
+                    showToast(getString(R.string.OutChatRoom));
                 }
             } else if (("KEY_UP").equals(intent.getAction())) {
                 LogUtils.d(TAG, "收到KEY_UP广播");
                 if (isInRoom) {
                     if (isSpeaking) {
+                        mediaPlayer = MediaPlayer.create(mContext, R.raw.du);
+                        mediaPlayer.setLooping(false);
+                        mediaPlayer.start();
                         rtChatSdk.SetSendVoice(false);
                         isSpeaking = false;
                         tvMessage.setText(getString(R.string.pressToSpeak));
                         btnSpeak.setBackgroundResource(R.drawable.icon_speak_pressed);
                     }
                 } else {
-                    showToast("您还没有进入聊天");
+                    showToast(getString(R.string.OutChatRoom));
                 }
             }
         }
-    }
-
-    @Override
-    public void onBackPressed() {
-        // 发送离开群组消息
-        leaveRoom();
-        super.onBackPressed();
     }
 
     private void leaveRoom() {
@@ -592,17 +594,12 @@ public class MainActivity extends BaseActivity {
             rtChatSdk.unRegister();
             rtChatSdk = null;
         }
-        ActivityController.finishActivity(this);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (rtChatSdk != null) {
-            rtChatSdk.stopAudioManager();
-            rtChatSdk.unRegister();
-            rtChatSdk = null;
-        }
+        leaveRoom();
         mAudioManager.unregisterMediaButtonEventReceiver(mComponentName);
         if (networkStatusReceiver != null) {
             mContext.unregisterReceiver(networkStatusReceiver);

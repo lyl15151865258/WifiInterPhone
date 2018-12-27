@@ -19,6 +19,7 @@
             android:layout_marginStart="@dimen/dp_10"
             android:scaleType="centerCrop"
             android:src="@drawable/photo_user"
+            android:visibility="gone"
             app:civ_border_color="#16F5F5F5"
             app:civ_border_width="@dimen/dp_2" />
 
