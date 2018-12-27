@@ -140,6 +140,7 @@
                 android:background="@color/white"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
+                android:visibility="gone"
                 android:padding="@dimen/dp_5">
 
                 <TextView
@@ -174,6 +175,7 @@
                 android:background="@color/white"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
+                android:visibility="gone"
                 android:padding="@dimen/dp_5">
 
                 <TextView
@@ -202,6 +204,7 @@
                 android:background="@color/white"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
+                android:visibility="gone"
                 android:padding="@dimen/dp_5">
 
                 <TextView

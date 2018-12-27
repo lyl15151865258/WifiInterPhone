@@ -44,11 +44,11 @@ public class MediaButtonReceiver extends BroadcastReceiver {
             if (keyEvent.getKeyCode() == KeyEvent.KEYCODE_HEADSETHOOK && keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
 
                 // 停止播放任何警报声
-                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                    mediaPlayer.stop();
-                    mediaPlayer.release();
-                    mediaPlayer = null;
-                }
+//                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+//                    mediaPlayer.stop();
+//                    mediaPlayer.release();
+//                    mediaPlayer = null;
+//                }
 
                 if (SPHelper.getBoolean("KEY_STATUS_UP", true)) {
                     // 之前是抬起的，直接发送按下广播、停止音乐、开启倒计时
@@ -69,29 +69,29 @@ public class MediaButtonReceiver extends BroadcastReceiver {
                         intent1.setAction("KEY_DOWN");
                         context.sendBroadcast(intent1);
                         SPHelper.save("KEY_STATUS_UP", false);
-                        startTimeDown();
+//                        startTimeDown();
 //                    }
                 } else {
                     // 之前是按下的
-                    if (addTime) {
-                        // 如果需要增加时间，直接重置倒计时时间
-                        LogUtils.d(TAG, "需要增加时间，恢复倒计时时间");
-                        leftTime = leftSeconds;
-                    } else {
+//                    if (addTime) {
+//                        // 如果需要增加时间，直接重置倒计时时间
+//                        LogUtils.d(TAG, "需要增加时间，恢复倒计时时间");
+//                        leftTime = leftSeconds;
+//                    } else {
                         // 如果不需要增加时间，则发送抬起的广播
                         LogUtils.d(TAG, "不需要增加时间，发送抬起的广播");
                         Intent intent1 = new Intent();
                         intent1.setAction("KEY_UP");
                         context.sendBroadcast(intent1);
                         SPHelper.save("KEY_STATUS_UP", true);
-                        if (syncTimeTask != null) {
-                            syncTimeTask.cancel(true);
-                            LogUtils.d(TAG, "取消syncTimeTask");
-                            syncTimeTask = null;
-                        } else {
-                            LogUtils.d(TAG, "syncTimeTask为空");
-                        }
-                    }
+//                        if (syncTimeTask != null) {
+//                            syncTimeTask.cancel(true);
+//                            LogUtils.d(TAG, "取消syncTimeTask");
+//                            syncTimeTask = null;
+//                        } else {
+//                            LogUtils.d(TAG, "syncTimeTask为空");
+//                        }
+//                    }
                 }
             }
         }
