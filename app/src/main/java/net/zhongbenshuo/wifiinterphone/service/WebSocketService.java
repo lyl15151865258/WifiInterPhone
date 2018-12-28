@@ -118,13 +118,12 @@ public class WebSocketService extends Service {
                         WebSocketService.this.sendBroadcast(intent);
 
                         List<String> voiceList = webSocketData.getFileName();
-                        String serverAddress = webSocketData.getServerAddress();
                         if (voiceList != null && voiceList.size() > 0) {
                             if (webSocketData.isStatus()) {
                                 if (webSocketData.getPlayCount() > 0) {
                                     List<Music> musicList = new ArrayList<>();
                                     for (String voiceName : voiceList) {
-                                        String musicPath = "http://" + serverAddress + "/andonvoicedata/01_Japanese/" + voiceName;
+                                        String musicPath = "http://" + serverHost + "/andonvoicedata/01_Japanese/" + voiceName;
                                         LogUtils.d(TAG, "音乐文件路径：" + musicPath);
                                         musicList.add(new Music(webSocketData.getListNo(), musicPath, webSocketData.getPlayCount(), 0));
                                     }

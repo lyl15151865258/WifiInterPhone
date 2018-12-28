@@ -42,7 +42,7 @@ public class Constants {
     public static final int trackMode = AudioTrack.MODE_STREAM;
 
     // WebSocket地址
-    public static final String WEBSOCKET_IP = "192.168.2.102";
+    public static final String WEBSOCKET_IP = "192.168.51.123";
     // WebSocket端口号
     public static final int WEBSOCKET_PORT = 50100;
 

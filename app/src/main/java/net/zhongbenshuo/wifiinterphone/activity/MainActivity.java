@@ -405,7 +405,7 @@ public class MainActivity extends BaseActivity {
                 vibrator.vibrate(50);
                 if (isInRoom) {
                     if (isSpeaking) {
-                        mediaPlayer = MediaPlayer.create(mContext, R.raw.dingdong);
+                        mediaPlayer = MediaPlayer.create(mContext, R.raw.du);
                         mediaPlayer.setLooping(false);
                         mediaPlayer.start();
                         rtChatSdk.SetSendVoice(false);
@@ -413,7 +413,7 @@ public class MainActivity extends BaseActivity {
                         tvMessage.setText(getString(R.string.pressToSpeak));
                         btnSpeak.setBackgroundResource(R.drawable.icon_speak_pressed);
                     } else {
-                        mediaPlayer = MediaPlayer.create(mContext, R.raw.du);
+                        mediaPlayer = MediaPlayer.create(mContext, R.raw.dingdong);
                         mediaPlayer.setLooping(false);
                         mediaPlayer.start();
                         rtChatSdk.SetSendVoice(true);
