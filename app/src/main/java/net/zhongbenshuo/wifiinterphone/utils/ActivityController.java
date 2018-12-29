@@ -2,6 +2,8 @@ package net.zhongbenshuo.wifiinterphone.utils;
 
 import android.app.Activity;
 
+import com.reechat.voiceengine.NativeVoiceEngine;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -100,6 +102,17 @@ public class ActivityController {
             }
         }
         activities.removeAll(delList);
+
+        try {
+            NativeVoiceEngine rtChatSdk = NativeVoiceEngine.getInstance();
+            rtChatSdk.registerEventHandler(null);
+            rtChatSdk.RequestQuitRoom();
+            rtChatSdk.stopAudioManager();
+            rtChatSdk.unRegister();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         android.os.Process.killProcess(android.os.Process.myPid());
         System.exit(0);
     }

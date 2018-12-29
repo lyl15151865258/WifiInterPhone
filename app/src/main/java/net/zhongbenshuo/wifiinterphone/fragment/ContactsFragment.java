@@ -178,12 +178,12 @@ public class ContactsFragment extends BaseFragment {
      */
     private IVoiceCallback iVoiceCallback = new IVoiceCallback.Stub() {
         @Override
-        public void findNewUser(String ipAddress, String name) {
+        public void findNewUser(String ipAddress, String name, String speakStatus) {
             sendMsg2MainThread(ipAddress, name, FOUND_NEW_USER);
         }
 
         @Override
-        public void removeUser(String ipAddress, String name) {
+        public void removeUser(String ipAddress, String name, String speakStatus) {
             sendMsg2MainThread(ipAddress, name, REMOVE_USER);
         }
     };

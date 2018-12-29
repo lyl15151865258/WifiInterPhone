@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 
 public class VoiceService extends Service {
 
-    private final static String TAG = "IntercomService";
+    private final static String TAG = "VoiceService";
 
     // 创建循环任务线程用于间隔的发送上线消息，获取局域网内其他的用户
     private ScheduledExecutorService discoverService;
@@ -88,12 +88,14 @@ public class VoiceService extends Service {
                 Bundle bundle = msg.getData();
                 String address = bundle.getString("address");
                 String name = bundle.getString("name");
-                service.findNewUser(address, name);
+                String speakStatus = bundle.getString("speakStatus");
+                service.findNewUser(address, name, speakStatus);
             } else if (msg.what == DISCOVERING_LEAVE) {
                 Bundle bundle = msg.getData();
                 String address = bundle.getString("address");
                 String name = bundle.getString("name");
-                service.removeUser(address, name);
+                String speakStatus = bundle.getString("speakStatus");
+                service.removeUser(address, name, speakStatus);
             }
         }
     }
@@ -123,16 +125,17 @@ public class VoiceService extends Service {
     /**
      * 发现新的组播成员
      *
-     * @param ipAddress IP地址
-     * @param name      用户姓名
+     * @param ipAddress   IP地址
+     * @param name        用户姓名
+     * @param speakStatus 讲话状态
      */
-    private void findNewUser(String ipAddress, String name) {
+    private void findNewUser(String ipAddress, String name, String speakStatus) {
         final int size = mCallbackList.beginBroadcast();
         for (int i = 0; i < size; i++) {
             IVoiceCallback callback = mCallbackList.getBroadcastItem(i);
             if (callback != null) {
                 try {
-                    callback.findNewUser(ipAddress, name);
+                    callback.findNewUser(ipAddress, name, speakStatus);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -144,16 +147,17 @@ public class VoiceService extends Service {
     /**
      * 删除用户显示
      *
-     * @param ipAddress IP地址
-     * @param name      用户姓名
+     * @param ipAddress   IP地址
+     * @param name        用户姓名
+     * @param speakStatus 讲话状态
      */
-    private void removeUser(String ipAddress, String name) {
+    private void removeUser(String ipAddress, String name, String speakStatus) {
         final int size = mCallbackList.beginBroadcast();
         for (int i = 0; i < size; i++) {
             IVoiceCallback callback = mCallbackList.getBroadcastItem(i);
             if (callback != null) {
                 try {
-                    callback.removeUser(ipAddress, name);
+                    callback.removeUser(ipAddress, name, speakStatus);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -209,6 +213,7 @@ public class VoiceService extends Service {
         changeNameReceiver = new ChangeNameReceiver();
         IntentFilter filter2 = new IntentFilter();
         filter2.addAction("CHANGE_NAME");
+        filter2.addAction("SPEAK_STATUS");
         registerReceiver(changeNameReceiver, filter2);
 
         IntentFilter filter3 = new IntentFilter();
@@ -243,9 +248,12 @@ public class VoiceService extends Service {
         discoverService = Executors.newScheduledThreadPool(1);
         // 初始化探测线程
         signInAndOutReq = new SignInAndOutReq(handler);
-        signInAndOutReq.setCommand(Command.DISC_REQUEST + "," + SPHelper.getString("UserName", "Not Defined"));
-        // 启动探测局域网内其余用户的线程（每5秒扫描一次）
-        discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 5, TimeUnit.SECONDS);
+        signInAndOutReq.setCommand(Command.DISC_REQUEST + ","
+                + SPHelper.getString("UserName", "Not Defined") + ","
+                + SPHelper.getString("SpeakStatus", "0"));
+        LogUtils.d(TAG, "新的姓名：" + SPHelper.getString("UserName", "Not Defined") + "，新的讲话状态：" + SPHelper.getString("SpeakStatus", "0"));
+        // 启动探测局域网内其余用户的线程（每2秒扫描一次）
+        discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 2, TimeUnit.SECONDS);
     }
 
     /**
@@ -255,7 +263,6 @@ public class VoiceService extends Service {
         // 初始化音频输入节点
         multicastSender = new MulticastSender(handler);
         multicastReceiver = new MulticastReceiver(handler);
-        // 开启音频输入、输出
         threadPool.execute(multicastSender);
         threadPool.execute(multicastReceiver);
     }
@@ -315,11 +322,11 @@ public class VoiceService extends Service {
         }
     }
 
-    // 修改姓名收到的广播
+    // 修改姓名或者讲话状态发生改变收到的广播
     public class ChangeNameReceiver extends BaseBroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if ("CHANGE_NAME".equals(intent.getAction())) {
+            if ("CHANGE_NAME".equals(intent.getAction()) || "SPEAK_STATUS".equals(intent.getAction())) {
                 initDiscoverThread();
             }
         }

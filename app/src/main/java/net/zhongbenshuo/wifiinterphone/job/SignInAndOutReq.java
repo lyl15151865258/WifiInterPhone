@@ -1,9 +1,12 @@
 package net.zhongbenshuo.wifiinterphone.job;
 
+import android.content.Context;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
+import net.zhongbenshuo.wifiinterphone.WifiInterPhoneApplication;
 import net.zhongbenshuo.wifiinterphone.constant.Command;
 import net.zhongbenshuo.wifiinterphone.constant.Constants;
 import net.zhongbenshuo.wifiinterphone.network.wlan.Multicast;
@@ -23,6 +26,7 @@ import java.net.DatagramPacket;
 
 public class SignInAndOutReq extends JobHandler {
 
+    private final String TAG = "SignInAndOutReq";
     private String command;
 
     public SignInAndOutReq(Handler handler) {
@@ -47,9 +51,11 @@ public class SignInAndOutReq extends JobHandler {
             if (command.startsWith(Command.DISC_REQUEST)) {
                 LogUtils.d("PackageContent", "SignInAndOutReq:" + command);
                 String name = command.split(",")[1];
+                String speakStatus = command.split(",")[2];
                 Bundle bundle = new Bundle();
                 bundle.putString("address", datagramPacket.getAddress().toString());
                 bundle.putString("name", name);
+                bundle.putString("speakStatus", speakStatus);
                 sendMsg2MainThread(bundle);
             } else if (command.equals(Command.DISC_LEAVE)) {
                 setCommand(Command.DISC_REQUEST);

@@ -1,9 +1,12 @@
 package net.zhongbenshuo.wifiinterphone.job;
 
+import android.content.Context;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
+import net.zhongbenshuo.wifiinterphone.WifiInterPhoneApplication;
 import net.zhongbenshuo.wifiinterphone.constant.Command;
 import net.zhongbenshuo.wifiinterphone.constant.Constants;
 import net.zhongbenshuo.wifiinterphone.contentprovider.SPHelper;
@@ -18,6 +21,8 @@ import net.zhongbenshuo.wifiinterphone.utils.WifiUtil;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 组播接收线程
@@ -29,6 +34,10 @@ import java.util.Arrays;
 
 public class MulticastReceiver extends JobHandler {
 
+    private final String TAG = "MulticastReceiver";
+
+    private Map<String, Boolean> speakStatusMap;
+
     private boolean flag = true;
 
     public MulticastReceiver(Handler handler) {
@@ -37,6 +46,7 @@ public class MulticastReceiver extends JobHandler {
 
     @Override
     public void run() {
+        speakStatusMap = new HashMap<>();
         while (flag) {
             // 设置接收缓冲段
             byte[] receivedData = new byte[Speex.getInstance().getFrameSize()];
@@ -67,7 +77,9 @@ public class MulticastReceiver extends JobHandler {
         LogUtils.d("PackageContent", "MulticastReceiver:" + content);
         if (content.startsWith(Command.DISC_REQUEST) &&
                 !packet.getAddress().toString().equals("/" + WifiUtil.getLocalIPAddress())) {
-            byte[] feedback = (Command.DISC_RESPONSE + "," + SPHelper.getString("UserName", "Not Defined")).getBytes();
+            byte[] feedback = (Command.DISC_RESPONSE + ","
+                    + SPHelper.getString("UserName", "Not Defined") + ","
+                    + SPHelper.getString("SpeakStatus", "0")).getBytes();
             // 发送数据
             DatagramPacket sendPacket = new DatagramPacket(feedback, feedback.length,
                     packet.getAddress(), Constants.MULTI_BROADCAST_PORT);
@@ -81,7 +93,36 @@ public class MulticastReceiver extends JobHandler {
             sendMsg2MainThread(packet.getAddress().toString(), name, VoiceService.DISCOVERING_RECEIVE);
         } else if (content.startsWith(Command.DISC_RESPONSE) &&
                 !packet.getAddress().toString().equals("/" + WifiUtil.getLocalIPAddress())) {
+            String ip = packet.getAddress().toString().split("[.]")[3];
             String name = content.split(",")[1];
+            String speakStatus = content.split(",")[2];
+
+            AudioManager audioManager = (AudioManager) WifiInterPhoneApplication.getInstance().getSystemService(Context.AUDIO_SERVICE);
+            int defaultVolume = SPHelper.getInt("defaultVolume", audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+            if ("0".equals(speakStatus)) {
+                // 这个IP的用户没有说话
+                speakStatusMap.put(ip, false);
+                // 判断是不是所有人都不讲话了
+                boolean someoneSpeaking = false;
+                for (Map.Entry<String, Boolean> entry : speakStatusMap.entrySet()) {
+                    LogUtils.d(TAG, "Key = " + entry.getKey() + ", Value = " + entry.getValue());
+                    if (entry.getValue()) {
+                        someoneSpeaking = true;
+                    }
+                }
+                SPHelper.save("SomeoneSpeaking", someoneSpeaking);
+                // 如果所有人都不讲话了
+                if (!someoneSpeaking) {
+                    LogUtils.d(TAG, "没有人讲话，设置音量值：" + defaultVolume);
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, defaultVolume, AudioManager.FLAG_VIBRATE);
+                }
+            } else {
+                // 这个IP的用户正在说话
+                speakStatusMap.put(ip, true);
+                LogUtils.d(TAG, "有人讲话，设置音量值：" + defaultVolume / 2);
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, defaultVolume / 2, AudioManager.FLAG_VIBRATE);
+                SPHelper.save("SomeoneSpeaking", true);
+            }
             // 发送Handler消息
             sendMsg2MainThread(packet.getAddress().toString(), name, VoiceService.DISCOVERING_RECEIVE);
         } else if (content.startsWith(Command.DISC_LEAVE) &&
