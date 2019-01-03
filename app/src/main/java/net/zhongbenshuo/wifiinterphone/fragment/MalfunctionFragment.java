@@ -96,6 +96,7 @@ public class MalfunctionFragment extends BaseFragment {
         Intent intent = new Intent(mContext, WebSocketService.class);
         intent.putExtra("ServerHost", Constants.WEBSOCKET_IP);
         intent.putExtra("WebSocketPort", String.valueOf(Constants.WEBSOCKET_PORT));
+        intent.putExtra("WebSocketName", String.valueOf(Constants.WEBSOCKET_NAME));
         mContext.startService(intent);
 
         myReceiver = new MyReceiver();

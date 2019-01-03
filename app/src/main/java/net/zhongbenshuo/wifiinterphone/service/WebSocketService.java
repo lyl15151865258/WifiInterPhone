@@ -39,7 +39,7 @@ public class WebSocketService extends Service {
     private WebSocketServiceBinder webSocketServiceBinder;
 
     private WebSocketClient mSocketClient;
-    private String serverHost, webSocketPort;
+    private String serverHost, webSocketPort, webSocketName;
 
     private Runnable runnable;
     private ExecutorService threadPool;
@@ -72,6 +72,7 @@ public class WebSocketService extends Service {
         if (intent != null) {
             serverHost = intent.getStringExtra("ServerHost");
             webSocketPort = intent.getStringExtra("WebSocketPort");
+            webSocketName = intent.getStringExtra("WebSocketName");
         }
         initWebSocket();
         return START_STICKY;
@@ -98,7 +99,7 @@ public class WebSocketService extends Service {
                         e.printStackTrace();
                     }
                 }
-                mSocketClient = new WebSocketClient(new URI("ws://" + serverHost + ":" + webSocketPort), new Draft_6455()) {
+                mSocketClient = new WebSocketClient(new URI("ws://" + serverHost + ":" + webSocketPort + "/" + webSocketName), new Draft_6455()) {
                     @Override
                     public void onOpen(ServerHandshake handshakedata) {
                         //通道打开

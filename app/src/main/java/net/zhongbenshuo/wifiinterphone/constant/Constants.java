@@ -45,6 +45,8 @@ public class Constants {
     public static final String WEBSOCKET_IP = "192.168.2.102";
     // WebSocket端口号
     public static final int WEBSOCKET_PORT = 50100;
+    // WebSocket名称
+    public static final String WEBSOCKET_NAME = "Interphone";
 
     // 音视频通讯相关内容
     public static final String APP_ID = "3768c59536565afb";
