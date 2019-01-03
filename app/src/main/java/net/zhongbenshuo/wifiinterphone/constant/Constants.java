@@ -42,11 +42,14 @@ public class Constants {
     public static final int trackMode = AudioTrack.MODE_STREAM;
 
     // WebSocket地址
-    public static final String WEBSOCKET_IP = "192.168.51.123";
+    public static final String WEBSOCKET_IP = "192.168.2.102";
     // WebSocket端口号
     public static final int WEBSOCKET_PORT = 50100;
 
-
-    public static final int kRoomType = 0x03 | 0x60 | 0x1800;
+    // 音视频通讯相关内容
+    public static final String APP_ID = "3768c59536565afb";
+    public static final String APP_KEY = "df191ec457951c35b8796697c204382d0e12d4e8cb56f54df6a54394be74c5fe";
+    public static final String SERVER_ADDRESS = "192.168.2.104:8080";
+    public static final int K_ROOM_TYPE = 0x03 | 0x60 | 0x1800;
 
 }

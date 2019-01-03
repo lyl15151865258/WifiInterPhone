@@ -71,5 +71,6 @@
     <!--SharedPreferences引用，无需翻译-->
     <string name="pref_room_key" translatable="false">room_preference</string>
     <string name="language" translatable="false">language</string>
+    <string name="copyright">Copyright © 2019 JSS Co., LTD. All rights reserved.</string>
 
 </resources>

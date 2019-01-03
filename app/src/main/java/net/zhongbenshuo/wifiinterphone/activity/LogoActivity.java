@@ -19,8 +19,14 @@ public class LogoActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_logo);
-        openActivity(MainActivity.class);
-        ActivityController.finishActivity(this);
+        try {
+            Thread.sleep(1500);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            openActivity(MainActivity.class);
+            ActivityController.finishActivity(this);
+        }
     }
 
     /**
@@ -30,4 +36,5 @@ public class LogoActivity extends BaseActivity {
     public void onBackPressed() {
 
     }
+
 }

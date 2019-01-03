@@ -62,5 +62,6 @@
     <string name="send_wlan_unicast">局域网单播</string>
     <string name="send_wlan_broadcast">局域网广播</string>
     <string name="send_wan">广域网</string>
+    <string name="copyright">Copyright © 2019 JSS Co., LTD. All rights reserved.</string>
 
 </resources>

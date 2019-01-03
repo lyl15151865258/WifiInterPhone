@@ -407,6 +407,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private View.OnClickListener onClickListener = (v) -> {
+        vibrator.vibrate(50);
         switch (v.getId()) {
             case R.id.tvContacts:
                 mViewpager.setCurrentItem(0);
@@ -420,7 +421,6 @@ public class MainActivity extends BaseActivity {
                 break;
             case R.id.btnEnterRoom:
                 // 进入/退出聊天
-                vibrator.vibrate(50);
                 if (isInRoom) {
                     rtChatSdk.registerEventHandler(null);
                     rtChatSdk.RequestQuitRoom();
@@ -433,13 +433,12 @@ public class MainActivity extends BaseActivity {
                     String ip = WifiUtil.getLocalIPAddress().split("[.]")[3];
                     String userName = SPHelper.getString("UserName", "Not Defined");
                     rtChatSdk.SetUserInfo(ip, userName);
-                    rtChatSdk.SetRoomType(Constants.kRoomType, 4);
+                    rtChatSdk.SetRoomType(Constants.K_ROOM_TYPE, 4);
                     rtChatSdk.RequestJoinRoom("ZBS");
                 }
                 break;
             case R.id.btnSpeak:
                 // 打开/关闭麦克风
-                vibrator.vibrate(50);
                 if (isInRoom) {
                     if (isSpeaking) {
                         stopSpeak();
@@ -452,7 +451,6 @@ public class MainActivity extends BaseActivity {
                 break;
             case R.id.btnSpeaker:
                 // 使用扬声器/听筒
-                vibrator.vibrate(50);
                 if (isInRoom) {
                     rtChatSdk.UseLoudSpeaker(!isUseSpeaker);
                     if (isUseSpeaker) {

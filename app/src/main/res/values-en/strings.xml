@@ -62,5 +62,6 @@
     <string name="send_wlan_unicast">WLAN unicast</string>
     <string name="send_wlan_broadcast">WLAN broadcast</string>
     <string name="send_wan">Wan</string>
+    <string name="copyright">Copyright © 2019 JSS Co., LTD. All rights reserved.</string>
 
 </resources>

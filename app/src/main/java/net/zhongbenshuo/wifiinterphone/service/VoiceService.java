@@ -252,8 +252,8 @@ public class VoiceService extends Service {
                 + SPHelper.getString("UserName", "Not Defined") + ","
                 + SPHelper.getString("SpeakStatus", "0"));
         LogUtils.d(TAG, "新的姓名：" + SPHelper.getString("UserName", "Not Defined") + "，新的讲话状态：" + SPHelper.getString("SpeakStatus", "0"));
-        // 启动探测局域网内其余用户的线程（每2秒扫描一次）
-        discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 2, TimeUnit.SECONDS);
+        // 启动探测局域网内其余用户的线程（每3秒发送一次自身信息）
+        discoverService.scheduleAtFixedRate(signInAndOutReq, 0, 3, TimeUnit.SECONDS);
     }
 
     /**

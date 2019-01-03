@@ -62,5 +62,6 @@
     <string name="send_wlan_unicast">LANユニキャスト</string>
     <string name="send_wlan_broadcast">LANブロードキャスト</string>
     <string name="send_wan">広域ネットワーク</string>
+    <string name="copyright">Copyright © 2019 J システムサポートー株式会社</string>
 
 </resources>

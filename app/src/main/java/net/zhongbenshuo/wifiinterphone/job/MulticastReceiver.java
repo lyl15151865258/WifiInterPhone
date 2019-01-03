@@ -77,10 +77,10 @@ public class MulticastReceiver extends JobHandler {
         LogUtils.d("PackageContent", "MulticastReceiver:" + content);
         if (content.startsWith(Command.DISC_REQUEST) &&
                 !packet.getAddress().toString().equals("/" + WifiUtil.getLocalIPAddress())) {
+            // 发送数据
             byte[] feedback = (Command.DISC_RESPONSE + ","
                     + SPHelper.getString("UserName", "Not Defined") + ","
                     + SPHelper.getString("SpeakStatus", "0")).getBytes();
-            // 发送数据
             DatagramPacket sendPacket = new DatagramPacket(feedback, feedback.length,
                     packet.getAddress(), Constants.MULTI_BROADCAST_PORT);
             try {
@@ -93,6 +93,7 @@ public class MulticastReceiver extends JobHandler {
             sendMsg2MainThread(packet.getAddress().toString(), name, VoiceService.DISCOVERING_RECEIVE);
         } else if (content.startsWith(Command.DISC_RESPONSE) &&
                 !packet.getAddress().toString().equals("/" + WifiUtil.getLocalIPAddress())) {
+            // 接收数据
             String ip = packet.getAddress().toString().split("[.]")[3];
             String name = content.split(",")[1];
             String speakStatus = content.split(",")[2];
